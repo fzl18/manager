@@ -10,7 +10,100 @@ const { Option } = Select;
 const getValue = obj => Object.keys(obj).map(key => obj[key]).join(',');
 const dayFormat = 'YYYY-MM-DD'
 
+class FormBox extends React.Component {
 
+  render(){
+      const {getFieldDecorator,getFieldValue}=this.props.form
+      const {assistants} = this.props
+      const formItemLayout = {
+        labelCol: {
+          xs: { span: 24 },
+          sm: { span: 7 },
+        },
+        wrapperCol: {
+          xs: { span: 24 },
+          sm: { span: 12 },
+          md: { span: 10 },
+        },
+      };
+  
+      const submitFormLayout = {
+        wrapperCol: {
+          xs: { span: 24, offset: 0 },
+          sm: { span: 10, offset: 7 },
+        },
+      };        
+      return(
+          <div>
+          <Form onSubmit={this.props.handleSubmit} style={{ marginTop: 8 }}
+          >
+            <FormItem
+              {...formItemLayout}
+              label={assistants?"医学助理姓名":"医生姓名"}
+            >
+              {getFieldDecorator('userCompellation', {
+                rules: [{
+                  required: true, message: '请输入姓名',
+                }],
+              })(
+                <Input placeholder="请输入姓名" />
+              )}
+            </FormItem>
+            
+            <FormItem
+              {...formItemLayout}
+              label="手机号"
+            >
+              {getFieldDecorator('userMobile', {
+                rules: [{
+                  required: true, message: '请选输入手机号',
+                  pattern:/^1[3|4|5|8][0-9]\d{4,8}$/,
+                }],
+              })(
+                <Input placeholder="请输入手机号" />
+              )}
+            </FormItem>
+            <FormItem
+              {...formItemLayout}
+              label={assistants ? "单位":"医院"}
+            >
+              {getFieldDecorator('hospitalName', {
+                rules: [{
+                  required: true, message: '请选择',
+                }],
+              })(
+                <Select placeholder="请选择" >
+                  <Option key="1">xxx</Option>
+                </Select>
+              )}
+            </FormItem>
+            <FormItem
+              {...formItemLayout}
+              label={assistants ? "部门" : "科室"}
+            >
+              {getFieldDecorator('departmentName', {
+                rules: [{
+                  required: true, message: '请选择',
+                }],
+              })(
+                <Select placeholder="请选择" >
+                  <Option key="1">xxx</Option>
+                </Select>
+              )}
+            </FormItem>
+
+            <FormItem {...submitFormLayout} style={{ marginTop: 32 }}>
+              <Button type="primary" htmlType="submit">
+                提交
+              </Button>
+              <Button style={{ marginLeft: 8 }} onClick={this.props.changeModalView.bind(this,'modalVisible','close')}>取消</Button>
+            </FormItem>
+          </Form>
+         </div>
+        
+      )
+  }
+}
 
 class SearchForm extends Component {
     render(){
@@ -18,24 +111,26 @@ class SearchForm extends Component {
         return (
             <Form onSubmit={this.props.handleSearch} layout="inline">
                 <FormItem label="姓名">
-                {getFieldDecorator('name')(
+                {getFieldDecorator('userCompellation')(
                     <Input placeholder="请输入姓名" />
                 )}
                 </FormItem>
                 <FormItem label="手机号">
-                {getFieldDecorator('mobile')(
+                {getFieldDecorator('userMobile')(
                     <Input placeholder="请输入手机号" />
                 )}
                 </FormItem>
                 <FormItem label="绑定状态">
-                {getFieldDecorator('name')(
+                {getFieldDecorator('status')(
                     <Select allowClear style={{width:120}}>
-                        <Option value="1">已绑定</Option>
-                        <Option value="0">未绑定</Option>
+                        <Option value="ACTIVE">已绑定</Option>
+                        <Option value="INACTIVE">已解绑</Option>
+                        <Option value="NOACTIVE">未绑定过</Option>
                     </Select>
                 )}
                 </FormItem>
-                <Button icon="search" type="primary" htmlType="submit" style={{float:'right'}}>查询</Button>
+                <Button icon="plus" type="primary" style={{float:'right'}} onClick={()=>{this.props.changeModalView('modalVisible','open','new')}}>新建</Button>
+                <Button icon="search" type="primary" htmlType="submit" style={{float:'right',marginRight:10}}>查询</Button>
             </Form>
         );
     }
@@ -57,16 +152,17 @@ state = {
     isEdit:false,
     selectedRowKeys: [],
     totalCallNo: 0,
-  };
+    assistants:this.props.assistants || false
+  }
 
   loadListData = (params) => {
-    const {pagination}=this.state
+    const {pagination,assistants}=this.state
     this.setState({
         loading: true,
     });
     const options ={
         method: 'POST',
-        url: API_URL.index.queryLastTendencyList,
+        url: assistants ? API_URL.usermanager.queryAssistantByHospitalDepartmentId : API_URL.usermanager.queryDoctorByHospitalDepartmentId,
         data: {
             offset: 1,
             limit: pagination.pageSize,
@@ -93,6 +189,7 @@ state = {
 
   componentDidMount() {
     this.loadListData()
+    console.log(this.state.assistants)
   }
 
   componentWillReceiveProps(nextProps) {
@@ -115,7 +212,7 @@ state = {
   }
 
   handleTableChange = (pagination, filtersArg, sorter) => {
-    const { searchFormValues } = this.state;
+    const { searchFormValues,} = this.state;
     const filters = Object.keys(filtersArg).reduce((obj, key) => {
       const newObj = { ...obj };
       newObj[key] = getValue(filtersArg[key]);
@@ -127,14 +224,18 @@ state = {
       pageSize: pagination.pageSize,
       ...searchFormValues,
       ...filters,
+      offset:pagination.current,
     };
     if (sorter.field) {
       params.sort = sorter.field;
       params.direction = sorter.order == "descend" ? "DESC" :  "ASC";
 
     }
-    this.loadListData(params)
-  }
+    
+    this.setState({pagination},()=>{
+      this.loadListData(params)
+    })
+  } 
 
   handleFormReset = () => {
     const { form } = this.props;
@@ -201,17 +302,127 @@ state = {
     });
   }
 
+  handleSubmit = (e) => {
+    e.preventDefault();
+    this.formboxref.validateFieldsAndScroll((err, values) => { 
+      if (!err) {
+        this.save(values)
+      }
+    });
+  }
+
+  save = (params) => {
+    const {isEdit,editId,assistants}=this.state
+    let url = ''
+    if(assistants){
+      url = isEdit ? API_URL.usermanager.modifyAssisantByHospitalDepartmentId :  API_URL.usermanager.addAssisantByHospitalDepartmentId
+    }else{
+      url = isEdit ? API_URL.usermanager.modifyDoctorByHospitalDepartmentId :  API_URL.usermanager.addDoctorByHospitalDepartmentId
+    }
+    const options ={
+        method: 'POST',
+        url: url,
+        data: {
+            ...params,
+            userId:isEdit ? editId : null,
+        },
+        dataType: 'json',
+        doneResult: data => {
+            if (!data.error) {
+                notification['success']({
+                    message: data.success,
+                    description: '',
+                  })
+                this.changeModalView('modalVisible','close')
+                this.loadListData()
+            } else {
+                Modal.error({ title: data.error});
+            }            
+        }
+    }
+    $.sendRequest(options)
+  }
+
+  edit=(id)=>{
+    const {assistants}=this.state
+    const options ={
+        method: 'POST',
+        url: assistants ? API_URL.usermanager.queryAssistantByHospitalDepartmentId : API_URL.usermanager.queryDoctorByHospitalDepartmentId,
+        data: {
+            offset: 1,
+            limit: 1,
+            userId:id,
+        },
+        dataType: 'json',
+        doneResult: data => {
+            if (!data.error) {
+                const detail = data.datas[0] || data.data[0];
+                this.setState({
+                    detail,
+                    editId:id,
+                });
+            } else {
+                Modal.error({ title: data.error });
+            }
+        }
+    }
+    $.sendRequest(options)
+  }
+
+
+  del = (id) => {
+    const {assistants}=this.state
+    const options ={
+        method: 'POST',
+        url: assistants ? API_URL.usermanager.removeAssisantByHospitalDepartmentId : API_URL.usermanager.removeDoctorByHospitalDepartmentId,
+        data: {
+            userId:id,
+        },
+        dataType: 'json',
+        doneResult: data => {
+            if (!data.error) {
+                notification['success']({
+                    message: data.success,
+                    description: '',
+                  })
+                this.loadListData()
+            } else {
+                Modal.error({ title: data.error });
+            }            
+        }
+    }
+    $.sendRequest(options)
+  }
+
+  changeModalView = (modalName,isShow,type,callback) => {    
+    this.setState({
+      [modalName]: isShow==='open' ? true : isShow==='close' ? false : false,
+    })
+    if(type=='new'){
+      this.setState({
+        isEdit:false,
+      })
+    }
+    if(type=='edit'){
+      this.setState({
+        isEdit:true,
+      })
+    }    
+    callback && callback()
+    }
 
   renderSearchForm() {
     const { selectedRows, searchFormValues } = this.state;
     const mapPropsToFields = () => ({ 
-            lastTendencyTitle:{value:searchFormValues.lastTendencyTitle},
+            userCompellation:{value:searchFormValues.userCompellation},
+            userMobile:{value:searchFormValues.userMobile},
+            status:{value:searchFormValues.status},
           })
     SearchForm = Form.create({mapPropsToFields})(SearchForm)    
     return (
         <Row gutter={2}>
             <Col md={24} sm={24} >
-                <SearchForm handleSearch={this.handleSearch} ref = { el => {this.searchFormRef = el}}/>
+                <SearchForm changeModalView={this.changeModalView} handleSearch={this.handleSearch} ref = { el => {this.searchFormRef = el}}/>
             </Col>
         </Row>
     );
@@ -238,48 +449,68 @@ state = {
 
 
   render() {
-    const {loading, listData, detail, selectedRows, addInputValue, isEdit, selectedRowKeys, totalCallNo, modalVisible, pagination } = this.state;
+    const {loading, listData, detail, selectedRows, addInputValue, isEdit, selectedRowKeys, totalCallNo, modalVisible, pagination, assistants } = this.state;
     const columns = [
       {
         title: '序号',
         dataIndex: 'index',
+        width:60,
       },
       {
         title: '姓名',
-        dataIndex: 'name',
+        dataIndex: 'userCompellation',
+        width:120,
       },
       {
         title: '手机号码',
-        dataIndex: 'mobile',
-        
+        dataIndex: 'userMobile',
+        width:150,        
       },      
       {
         title: '单位',
-        dataIndex: 'num', 
-        
+        dataIndex: 'hospitalName', 
+        width:150,
       },
       {
         title: '部门科室',
-        dataIndex: 'dk', 
-        
+        dataIndex: 'departmentName', 
+        width:150,
       },
       {
         title: '微信号',
-        dataIndex: 'wx', 
-        
+        dataIndex: 'openId', 
+        width:150,
       },
       {
         title: '微信昵称',
-        dataIndex: 'wx2', 
+        dataIndex: 'nickName',
+        width:100,
       },
       {
         title: '绑定状态',
-        dataIndex: 'bind', 
+        dataIndex: 'status',
+        width:80,
+        render:(text,react)=>
+        react.status =='NOACTIVE' ? "未绑定过": react.status == "INACTIVE" ? "已解绑" : react.status == "ACTIVE" ? "已绑定" : "未知"
       },
       {
         title: '最近一次绑定时间',
-        dataIndex: 'lasttime', 
+        dataIndex: 'lastAccessTime', 
+        width:150,
         sorter: true,
+      },
+      {
+        title: '操作',
+        width:100,
+        render: (text,record,index) => (
+          <div style={{textAlign:'center'}}>
+            <a href="javascript:;" onClick={()=>{this.changeModalView('modalVisible','open','edit',()=>{ this.edit(record.id) })}}>修改</a>
+            <span className="ant-divider" />
+            <Popconfirm title="确定要删除吗？" onConfirm={()=>{this.del(record.id)}} okText="是" cancelText="否">
+            <a href="javascript:;" >删除</a>
+            </Popconfirm>
+          </div>
+        ),
       },
     ];
 
@@ -287,7 +518,7 @@ state = {
     listData.map((d,i)=>{
         let list = {
             index: ((pagination.current - 1) || 0) * pagination.pageSize + i + 1,
-            id:d.lastTendencyId,
+            id:d.userId,
             ...d,
         }
         lists.push(list)
@@ -303,17 +534,20 @@ state = {
       // showQuickJumper: true,
       ...pagination,
     };
-
     const mapPropsToFields = () => (        
       isEdit ?        
         { 
-            lastTendencyTitle:{value:detail.lastTendencyTitle},
-            mainImgName:{value:detail.mainImgName},
-            publishDay:{value:moment(detail.publishDay)},
-            htmlText:{value:{editorContent:detail.htmlText}},
+            userMobile:{value:detail.userMobile},
+            userCompellation:{value:detail.userCompellation},
         } : null
       ) 
-    // FormBox=Form.create({mapPropsToFields})(FormBox)
+    FormBox=Form.create({mapPropsToFields})(FormBox)
+    let title
+    if(assistants){
+      title = isEdit ? '修改医学助理':'新建医学助理'
+    }else{
+      title = isEdit ? '修改医生':'新建医生'
+    }
     return (
       <div>
             <div>
@@ -328,17 +562,18 @@ state = {
               columns={columns}
               pagination={paginationProps}
               onChange={this.handleTableChange}
+              scroll={{y:lists.length > config.listLength ? config.scroll.y : null}}
             />
-            {/* <Modal
-                title={isEdit ? '修改动态':'新建动态'}
+            <Modal
+                title={title}
                 visible={modalVisible}
-                width={800}
+                width={500}
                 onOk={this.handleAdd}
                 onCancel={this.changeModalView.bind(this,'modalVisible','close')}
                 footer={null}
             >
-               <FormBox ref={el=>{this.formboxref = el}} closeModalView={this.changeModalView} handleSubmit={this.handleSubmit}/>
-            </Modal> */}
+               <FormBox ref={el=>{this.formboxref = el}} assistants={assistants} changeModalView={this.changeModalView}  handleSubmit={this.handleSubmit}/>
+            </Modal>
       </div>
     );
   }

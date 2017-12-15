@@ -20,8 +20,9 @@ export default class Editor extends PureComponent {
 
     componentDidMount() {
       const elem = this.editorElem
-      const editor = new E(elem)
+      const editor = new E(elem)      
       const path = imgpath
+      editor.customConfig.zIndex = 1
       editor.customConfig.menus = this.props.menus || [
         'head',
         'bold',

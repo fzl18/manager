@@ -3,6 +3,7 @@ import {Route, Redirect} from "react-router-dom";
 import Login from "./components/home/Login";
 import Carousel from "./components/Index/Carousel"
 import News from "./components/Index/News"
+import NewsSave from "./components/Index/NewsSave"
 import Meeting from "./components/Index/Meeting"
 import Subject from "./components/Index/Subject"
 import Department from "./components/Team/Department"
@@ -17,6 +18,7 @@ import Doctors from "./components/usermanager/Doctors"
 import Patients from "./components/usermanager/Patients"
 import Serive from "./components/Serive"
 import Arrangement from "./components/Arrangement"
+import ArrangeDetail from "./components/Arrangement/detail"
 import Auth from "./components/Auth"
 
 const routes = [{
@@ -31,6 +33,14 @@ const routes = [{
     path: '/index/news',
     exact: true,
     render: () => <News />,
+}, {
+    path: '/index/news/save',
+    exact: true,
+    render: (props) => <NewsSave {...props}/>,
+}, {
+    path: '/index/news/save/:id',
+    exact: true,
+    render: (props) => <NewsSave {...props}/>,
 }, {
     path: '/index/meet',
     exact: true,
@@ -91,6 +101,10 @@ const routes = [{
     path: '/arrangement',
     exact: true,
     render: () => <Arrangement />,
+}, {
+    path: '/arrangement/detail/:id',
+    exact: true,
+    render: (props) => <ArrangeDetail {...props}/>,
 }, {
     path: '/auth',
     exact: true,

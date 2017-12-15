@@ -43,18 +43,19 @@ class SelectCitys extends React.Component {
 
 
   onChange = (value, selectedOptions) => {
-      console.log(value)
+    //   console.log(value)
 
     if(value[0]){
         this.props.ChangeSelectprovinces ? this.props.ChangeSelectprovinces(value[0],selectedOptions[0]) : null
     }
     if(value[1]){
         this.props.ChangeSelect ? this.props.ChangeSelect(value[1],selectedOptions[1]) :null
-        console.log(value[1],selectedOptions[1])
+        // console.log(value[1],selectedOptions[1])
         this.setState({
             value:selectedOptions[1]
         },()=>{
             const onChange = this.props.onChange;
+            console.log(onChange)
             if (onChange) {
               onChange(Object.assign({}, this.state.value));
             }

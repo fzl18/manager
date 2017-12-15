@@ -1,4 +1,5 @@
 import React, {Component} from 'react';
+import {Route, Redirect, Link} from "react-router-dom";
 import $ from '../../common/AjaxRequest';
 import moment from 'moment';
 import API_URL from '../../common/url';
@@ -58,7 +59,7 @@ class FormBox extends React.Component {
         uid: -1,
         name: 'xxx.png',
         status: 'done',
-        url: `http://${imgUrl}`
+        url: imgUrl
       }]: []
       this.setState({
         fileList
@@ -272,7 +273,7 @@ state = {
   }
 
   handleTableChange = (pagination, filtersArg, sorter) => {
-    const { searchFormValues } = this.state;
+    const { searchFormValues,} = this.state;
     const filters = Object.keys(filtersArg).reduce((obj, key) => {
       const newObj = { ...obj };
       newObj[key] = getValue(filtersArg[key]);
@@ -284,14 +285,18 @@ state = {
       pageSize: pagination.pageSize,
       ...searchFormValues,
       ...filters,
+      offset:pagination.current,
     };
     if (sorter.field) {
       params.sort = sorter.field;
       params.direction = sorter.order == "descend" ? "DESC" :  "ASC";
 
     }
-    this.loadListData(params)
-  }
+    
+    this.setState({pagination},()=>{
+      this.loadListData(params)
+    })
+  } 
 
   handleFormReset = () => {
     const { form } = this.props;
@@ -363,7 +368,8 @@ state = {
                     <Button type="danger" style={{marginRight:10}}> 批量删除</Button>
                 </Popconfirm>
             }            
-                <Button icon="plus" type="primary" onClick={()=>{this.changeModalView('modalVisible','open','new')}}>新建</Button>
+                {/* <Button icon="plus" type="primary" onClick={()=>{this.changeModalView('modalVisible','open','new')}}>新建</Button> */}
+                <Link to='/index/news/save'><Button icon="plus" type="primary">新建</Button></Link>
             </Col>
         </Row>
     );
@@ -484,29 +490,34 @@ state = {
       {
         title: '序号',
         dataIndex: 'index',
+        width:60
       },
       {
         title: '动态标题',
         dataIndex: 'lastTendencyTitle',
+        width:500
       },
       {
         title: '创建时间',
         dataIndex: 'createTimeString',
         sorter: true,
+        width:200
       },      
       {
         title: '发布时间',
         dataIndex: 'publishDay', 
         sorter: true,
+        width:200,
         render: (text,record,index) => (
           moment(record.publishDay).format("YY.MM.DD")
         )
       },      
       {
         title: '操作',
+        width:150,
         render: (text,record,index) => (
           <div>
-            <a href="javascript:;" onClick={()=>{this.changeModalView('modalVisible','open','edit',()=>{ this.edit(record.id) })}}>修改</a>
+            <Link to={`/index/news/save/${record.id}`}>修改</Link>
             <span className="ant-divider" />
             <Popconfirm title="确定要删除吗？" onConfirm={()=>{this.del(record.id)}} okText="是" cancelText="否">
             <a href="javascript:;" >删除</a>
@@ -534,9 +545,8 @@ state = {
     const paginationProps = {
       // showSizeChanger: true,
       // showQuickJumper: true,
-      ...pagination,
+      ...pagination,      
     };
-
     const mapPropsToFields = () => (        
       isEdit ?        
         { 
@@ -562,6 +572,7 @@ state = {
               columns={columns}
               pagination={paginationProps}
               onChange={this.handleTableChange}
+              scroll={{y:lists.length > config.listLength ? config.scroll.y : null}}
             />
             <Modal
                 title={isEdit ? '修改动态':'新建动态'}

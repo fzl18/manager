@@ -16,7 +16,7 @@ if (!STATIC) {
             arealist: `${ENV.ADMIN_URL}/department/getRegionListByParentId.do`, // 获取省市接口（一级行政单位
             uploadimg:`${ENV.ADMIN_URL}/multimedia/uploadEditorImg.do`,
             uploadser:`${ENV.ADMIN_URL}/multimedia/uploadImg.do`,
-            imgpath:`${ENV.ADMIN_URL}/multimedia/editor/img/get.do?value=`,
+            imgpath:`/multimedia/editor/img/get.do?value=`,
         },
         index:{
             queryLastTendencyList: `${ENV.ADMIN_URL}/department/queryLastTendencyList.do`,
@@ -59,7 +59,18 @@ if (!STATIC) {
             queryQuestionStoreList: `${ENV.ADMIN_URL}/department/queryQuestionStoreList.do`,
             addQuestionStore: `${ENV.ADMIN_URL}/department/addQuestionStore.do`,
             deleteQuestionStore: `${ENV.ADMIN_URL}/department/deleteQuestionStore.do`,
-            modifyQuestionStore: `${ENV.ADMIN_URL}/department/modifyQuestionStore.do`,
+            modifyQuestionStore: `${ENV.ADMIN_URL}/department/modifyQuestionStore.do`,            
+        },
+        usermanager:{
+            queryPatients: `${ENV.ADMIN_URL}/department/queryPatients.do`,
+            queryDoctorByHospitalDepartmentId: `${ENV.ADMIN_URL}/department/queryDoctorByHospitalDepartmentId.do`,
+            addDoctorByHospitalDepartmentId: `${ENV.ADMIN_URL}/department/addDoctorByHospitalDepartmentId.do`,
+            modifyDoctorByHospitalDepartmentId: `${ENV.ADMIN_URL}/department/modifyDoctorByHospitalDepartmentId.do`,
+            removeDoctorByHospitalDepartmentId: `${ENV.ADMIN_URL}/department/removeDoctorByHospitalDepartmentId.do`,
+            queryAssistantByHospitalDepartmentId: `${ENV.ADMIN_URL}/department/queryAssistantByHospitalDepartmentId.do`,
+            addAssisantByHospitalDepartmentId: `${ENV.ADMIN_URL}/department/addAssisantByHospitalDepartmentId.do`,
+            modifyAssisantByHospitalDepartmentId: `${ENV.ADMIN_URL}/department/modifyAssisantByHospitalDepartmentId.do`,
+            removeAssisantByHospitalDepartmentId: `${ENV.ADMIN_URL}/department/removeAssisantByHospitalDepartmentId.do`,
             
         }
 	};

@@ -12,53 +12,71 @@ const { MonthPicker, RangePicker } = DatePicker;
 const { Option } = Select;
 const getValue = obj => Object.keys(obj).map(key => obj[key]).join(',');
 const dayFormat = 'YYYY-MM-DD'
-let uuid=0
+
 
 class AddInput extends Component {
   constructor(props) {
     super(props);
     const value = this.props.value || {};
-    console.log(value)    
     this.state = {
+      researchSiteId:value.researchSiteId || '',
       hospital: value.hospital || '',
       department:value.department || '',
-      reseacher:value.reseacher || '',
+      mainResearcher:value.mainResearcher || '',
     };
   }
 
   componentWillReceiveProps(nextProps) {
-    // if ('value' in nextProps) {
+    if ('value' in nextProps) {
       const value = nextProps.value;
       this.setState(value);
-    // }
+      // console.log(value)
+    }
   }
 
   handleChange = (name,e) => {
+    const val= e.target.value
     this.setState({
       [name]:e.target.value,
-    },()=>{this.triggerChange()})
-
+    },()=>{this.triggerChange({val})})
+    // console.log(this.state)
   }
 
-  triggerChange = () => {
+  triggerChange = (changedValue) => {
     const onChange = this.props.onChange;
-    console.log(onChange)
+
     if (onChange) {
-      onChange(Object.assign({}, this.state));
-      console.log(this.state)
+      onChange(Object.assign({}, this.state,changedValue));
+
     }
   }
   render(){
+    const {researchSiteId,hospital,department,mainResearcher }=this.state
+    console.log(this.state)
     return(      
       <InputGroup style={this.props.style} size='large'>
-        <Col span={7}>
-          <Input placeholder="请输入医院" onChange={this.handleChange.bind(this,'hospital')}/>
+        <Col>
+          <Input defaultValue={researchSiteId} style={{display:'none'}} />
         </Col>
-        <Col span={7}>
-          <Input placeholder="请输入科室" onChange={this.handleChange.bind(this,'department')} />
+        <Col>
+          <Input defaultValue={hospital} style={{width:180,}} placeholder="请输入医院" onChange={this.handleChange.bind(this,'hospital')}/>
         </Col>
-        <Col span={7}>
-          <Input placeholder="请输入主要研究者" onChange={this.handleChange.bind(this,'reseacher')} />
+        <Col >
+          <Input defaultValue={department} style={{width:150,marginLeft:10}} placeholder="请输入科室" onChange={this.handleChange.bind(this,'department')} />
+        </Col>
+        <Col >
+          <Input defaultValue={mainResearcher} style={{width:100,marginLeft:10}} placeholder="请输入研究者" onChange={this.handleChange.bind(this,'mainResearcher')} />
+        </Col>
+        <Col >
+          {this.props.length > 1 ? (
+            <Icon
+              className="dynamic-delete-button"
+              type="close-square"
+              style={{color:'red',fontSize:20}}
+              disabled={this.props.length === 1}
+              onClick={this.props.remove}
+            />
+          ) : null}
         </Col>
       </InputGroup>
     )
@@ -92,9 +110,9 @@ class FormBox extends React.Component {
         return str.replace(/<[^>]+>/g,"");
       }
   
-    validateHtml=(rule, value, callback)=>{      
+    validateHtml=(rule, value, callback)=>{
         if(value){
-            let html = this.delHtmlTag(value.editorContent)
+            let html = this.delHtmlTag(value.editorContent = '')
             if (html) {
                 callback();
             return;
@@ -105,19 +123,23 @@ class FormBox extends React.Component {
     }
 
     remove = (k) => {
+      
       const { form } = this.props;
-      const centers = form.getFieldValue('centers');
+      let centers = form.getFieldValue('centers');
+      // console.log(centers,k)
       if (centers.length === 1) {
         return;
-      }  
-      // can use data-binding to set
+      }
+      centers.splice(k,1)
+      console.log(centers)
       form.setFieldsValue({
-        centers: centers.filter(key => key !== k),
+        // centers: centers.filter((key,i) => {console.log(key,i,k) ; return i !== k}),
+        centers
       });
     }
 
     add = () => {
-      uuid++;
+      let uuid={department:"",hospital:"",mainResearcher:"",researchSiteId:''}
       const { form } = this.props;
       const centers = form.getFieldValue('centers');
       const nextKeys = centers.concat(uuid);
@@ -128,12 +150,12 @@ class FormBox extends React.Component {
     
     componentDidMount(){
       const  { getFieldValue} = this.props.form;
-      const imgUrl= getFieldValue('mainImgUrl')
-      const fileList = getFieldValue('mainImgUrl') ? [{
+      const imgUrl= getFieldValue('mainImgNameUrl')
+      const fileList = getFieldValue('mainImgNameUrl') ? [{
         uid: -1,
         name: 'xxx.png',
         status: 'done',
-        url: `http://${imgUrl}`
+        url: imgUrl
       }]: []
       this.setState({
         fileList
@@ -141,7 +163,7 @@ class FormBox extends React.Component {
     }
 
     normFile = (rule, value, callback) => {
-      console.log(typeof value)
+      // console.log(typeof value)
       if(typeof value =='string'){
           callback();
           return;
@@ -181,42 +203,22 @@ class FormBox extends React.Component {
           },
         };
 
-        getFieldDecorator('centers', {initialValue: [0]})
-        const centers = getFieldValue('centers');
-        const formItems = centers.map((k, index) => {
-          return (
-            <FormItem
-              {...(index === 0 ? formItemLayout : submitFormLayout)}
-              label={index === 0 ? '研究中心' : ''}
-              required={false}
-              key={k}
-            >
-              {getFieldDecorator(`item-${k}`, {initialValue: [{hospital:'',department:'',reseacher:''}]
-                // validateTrigger: ['onChange', 'onBlur'],
-                // rules: [{
-                //   required: true,
-                //   whitespace: true,
-                //   message: "Please input passenger's name or delete this field.",
-                // }],
-              })(
-                <div style={{width:'130%'}}>
-                  <AddInput style={{ width: '90%',display:'inline' ,marginRight: 8 }} />
-                  {centers.length > 1 ? (
-                    <Icon
-                      className="dynamic-delete-button"
-                      type="close-square"
-                      style={{color:'red',fontSize:20}}
-                      disabled={centers.length === 1}
-                      onClick={() => this.remove(k)}
-                    />
-                  ) : null}
-                </div>
-              )}
-              
-            </FormItem>
-          );
-        });
-
+        getFieldDecorator('centers',{initialValue: [{department:"",hospital:"",mainResearcher:"",researchSiteId:''}]})
+        const centers = getFieldValue('centers')
+        console.log(centers)        
+        const site = centers &&
+        centers.map((k, index) =>{
+         return(
+           <FormItem
+             {...(index === 0 ? formItemLayout : submitFormLayout)}
+             label={index === 0 ? '研究中心' : ''}              
+             key={index}
+           >
+             {getFieldDecorator(`researchSiteList[${index}]`,{initialValue: k})(
+               <AddInput remove={()=>{ this.remove(index) }} length={centers.length} style={{ width: '150%',display:'inline-block' ,marginRight: 8 }} />
+             )}
+           </FormItem>
+        )})
         return(
             <div>
             <Form onSubmit={this.props.handleSubmit} style={{ marginTop: 8 }}
@@ -357,7 +359,7 @@ class FormBox extends React.Component {
                   }],
                 })(
                     <Select allowClear>
-                        <Option value='PREPARING '>准备中</Option>
+                        <Option value='PREPARING'>准备中</Option>
                         <Option value='INTO'>入组中</Option>
                         <Option value='IN'>入组完成</Option>
                         <Option value='COMPLETED'>已完成</Option>
@@ -383,8 +385,8 @@ class FormBox extends React.Component {
                 })(
                   <Editor style={{width:460}}/>
                 )}
-              </FormItem>
-              {formItems}
+              </FormItem>              
+              {site}
               <FormItem {...submitFormLayout}>
                 <Button type="primary" onClick={this.add} style={{ width: '60%'}}>
                   <Icon type="plus" /> 添加研究中心
@@ -520,7 +522,7 @@ state = {
   }
 
   handleTableChange = (pagination, filtersArg, sorter) => {
-    const { searchFormValues } = this.state;
+    const { searchFormValues,} = this.state;
     const filters = Object.keys(filtersArg).reduce((obj, key) => {
       const newObj = { ...obj };
       newObj[key] = getValue(filtersArg[key]);
@@ -532,14 +534,18 @@ state = {
       pageSize: pagination.pageSize,
       ...searchFormValues,
       ...filters,
+      offset:pagination.current,
     };
     if (sorter.field) {
       params.sort = sorter.field;
       params.direction = sorter.order == "descend" ? "DESC" :  "ASC";
 
     }
-    this.loadListData(params)
-  }
+    
+    this.setState({pagination},()=>{
+      this.loadListData(params)
+    })
+  } 
 
   handleFormReset = () => {
     const { form } = this.props;
@@ -644,12 +650,13 @@ state = {
     e.preventDefault();
     this.formboxref.validateFieldsAndScroll((err, values) => {      
       if (!err) {
-        console.log(values)
+        // console.log(values)
         values.beginTime =values.subjecgtTime && values.subjecgtTime[0].format(dayFormat)
-        values.endime = values.subjecgtTime && values.subjecgtTime[1].format(dayFormat)
-        values.mainImgName = values.mainImgName && values.mainImgName.file.response.data[0].fileName
+        values.endTime = values.subjecgtTime && values.subjecgtTime[1].format(dayFormat)
+        values.mainImgName = values.mainImgName.file ? values.mainImgName.file.response.data[0].fileName : values.mainImgName
         values.htmlText = values.htmlText && values.htmlText.editorContent 
         values.subjecgtTime = null
+        values.centers=null
         this.save(values)
       }
     });
@@ -657,11 +664,22 @@ state = {
 
   save = (params) => {
     const {isEdit,editId}=this.state
+    // console.log(params);
+    const {researchSiteList = []} = params;
+    const siteListObj = {};
+    researchSiteList.map((value, index) => {
+      siteListObj[`researchSiteList[${index}].researchSiteId`] = value.researchSiteId || null;
+      siteListObj[`researchSiteList[${index}].hospital`] = value.hospital;
+      siteListObj[`researchSiteList[${index}].department`] = value.department;
+      siteListObj[`researchSiteList[${index}].mainResearcher`] = value.mainResearcher;
+    })
+    params.researchSiteList = [];
     const options ={
         method: 'POST',
         url: isEdit ? API_URL.index.modifyResearchSubject :  API_URL.index.addResearchSubject,
         data: {
             ...params,
+            ...siteListObj,
             researchSubjectId:isEdit ? editId : null,
         },
         dataType: 'json',
@@ -688,7 +706,7 @@ state = {
         data: {
             offset: 1,
             limit: 1,
-            meetingId:id,
+            researchSubjectId:id,
         },
         dataType: 'json',
         doneResult: data => {
@@ -756,14 +774,17 @@ state = {
       {
         title: '序号',
         dataIndex: 'index',
+        width:60,
       },
       {
         title: '研究课题题目',
         dataIndex: 'researchSubjectTitle',
+        width:250,
       },
       {
         title: '研究类型',
         dataIndex: 'researchType',
+        width:80,
         sorter: true,
         render: (text,record,index) => (
             record.researchType ==='INTERVENTION' ?
@@ -775,16 +796,19 @@ state = {
       {
         title: '研究开始时间',
         dataIndex: 'beginTime',
+        width:150,
         sorter: true,
       },      
       {
         title: '研究结束时间',
         dataIndex: 'endTime', 
+        width:150,
         sorter: true,
       },      
       {
         title: '研究状态',
         dataIndex: 'researchStatus', 
+        width:100,
         sorter: true,
         render: (text,record,index) => {
             let con
@@ -808,12 +832,14 @@ state = {
       {
         title: '创建时间',
         dataIndex: 'createTime', 
+        width:150,
         sorter: true,
       },      
       {
         title: '操作',
+        width:100,
         render: (text,record,index) => (
-          <div>
+          <div style={{textAlign:'center'}}>
             <a href="javascript:;" onClick={()=>{this.changeModalView('modalVisible','open','edit',()=>{ this.edit(record.id) })}}>修改</a>
             <span className="ant-divider" />
             <Popconfirm title="确定要删除吗？" onConfirm={()=>{this.del(record.id)}} okText="是" cancelText="否">
@@ -850,19 +876,20 @@ state = {
       isEdit ?        
         { 
             researchSubjectTitle:{value:detail.researchSubjectTitle},
-            researchType:{value:`${detail.researchType}`},
+            researchType:{value:detail.researchType ? `${detail.researchType}` : ''},
             researchSubjectId:{value:detail.researchSubjectId},
             subjectTime:{value:[moment(detail.beginTime),moment(detail.endTime)]},
-            clinicalTrailStaging:{value:`${detail.clinicalTrailStaging}`},
+            clinicalTrailStaging:{value:detail.clinicalTrailStaging ? `${detail.clinicalTrailStaging}` : ''},
             cro:{value:detail.cro},
             htmlText:{value:{editorContent:detail.htmlText}},
             interveneMethod:{value:detail.interveneMethod},
             mainImgName:{value:detail.mainImgName},
+            mainImgNameUrl:{value:detail.mainImgNameUrl},
             malady:{value:detail.malady},
             reseacher:{value:detail.reseacher},
-            researchStatus:{value:`${detail.researchStatus}`},
-            researchSubjectId:{value:detail.researchSubjectId},
+            researchStatus:{value:detail.researchStatus ? `${detail.researchStatus}`:''},
             sponsor:{value:detail.sponsor},
+            centers:{value:detail.researchSiteList}
         } : null
       ) 
     FormBox=Form.create({mapPropsToFields})(FormBox)
@@ -880,6 +907,7 @@ state = {
               columns={columns}
               pagination={paginationProps}
               onChange={this.handleTableChange}
+              scroll={{y:lists.length > config.listLength ? config.scroll.y : null}}
             />
             <Modal
                 title={isEdit ? '修改动态':'新建动态'}

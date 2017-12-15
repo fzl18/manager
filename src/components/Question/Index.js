@@ -66,10 +66,10 @@ class FormBox extends React.Component {
     add = () => {
       uuid++;
       const { form } = this.props;
-      const keys = form.getFieldValue('keys');
-      const nextKeys = keys.concat(uuid);
+      const questionStoreKeywordList = form.getFieldValue('questionStoreKeywordList');
+      const nextKeys = questionStoreKeywordList.concat(uuid);
       form.setFieldsValue({
-        keys: nextKeys,
+        questionStoreKeywordList: nextKeys,
       });
     }
     
@@ -79,7 +79,7 @@ class FormBox extends React.Component {
 
     render(){
         const { getFieldDecorator, getFieldValue, setFieldsValue} = this.props.form;
-        const { previewVisible, previewImage, submitting, fileList} = this.state;
+        const { previewVisible, previewImage, submitting, fileList} = this.state;        
         const uploadButton = (
           <div>
             <Icon type="plus" />
@@ -104,24 +104,22 @@ class FormBox extends React.Component {
             sm: { span: 10, offset: 7 },
           },
         };
-        getFieldDecorator('keys', {initialValue: []})
-        const keys = getFieldValue('keys');
-        const formItems = keys.map((k, index) => {
+        const key = getFieldValue('questionStoreKeywordList') || []        
+        const formItems = key.map((k, index) => {
           return (
             <span style={{marginRight:3,display:'inline-block',width:120}}>
-            {/* <FormItem
-              {...(index === 0 ? submitFormLayout : submitFormLayout)}
-              label={index === 0 ? '' : ''}
+            <FormItem              
               required={false}
               key={k}
-            > */}
-              {getFieldDecorator(`names-${k}`, {
-                // validateTrigger: ['onChange', 'onBlur'],
-                // rules: [{
-                //   required: true,
-                //   whitespace: true,
-                //   message: "Please input passenger's name or delete this field.",
-                // }],
+            >
+              {getFieldDecorator(`key[${k}]`, {
+                initialValue:k,
+                validateTrigger: ['onChange', 'onBlur'],
+                rules: [{
+                  required: true,
+                  whitespace: true,
+                  message: "请输入关键字",
+                }],
               })(
                 <span style={{display:'inline-block'}}>
                   <Input style={{width:90,background:'#eee',marginBottom:10}} size='large'/>
@@ -135,7 +133,7 @@ class FormBox extends React.Component {
                   ) : null }
                 </span>
               )}              
-            {/* </FormItem> */}
+            </FormItem>
             </span>
           );
         });
@@ -159,9 +157,15 @@ class FormBox extends React.Component {
                 {...formItemLayout}
                 label="关键词"
               >
-                <Button type="primary" onClick={this.add} style={{ width: '30%'}}>
-                  <Icon type="plus" /> 添加
-                </Button>
+              {getFieldDecorator('keys', {
+                  rules: [{
+                    required: true,message:'请至少添加一个关键词'
+                  }],
+                })(
+                  <Button type="primary" onClick={this.add} style={{ width: '30%'}}>
+                    <Icon type="plus" /> 添加
+                  </Button>
+                )}                
               </FormItem>
               <FormItem
                 {...submitFormLayout}
@@ -209,7 +213,7 @@ class SearchForm extends Component {
                 )}
                 </FormItem>
                 <FormItem label="关键字">
-                {getFieldDecorator('params')(
+                {getFieldDecorator('keyword')(
                     <Input placeholder="请输入关键字" />
                 )}
                 </FormItem>
@@ -293,7 +297,7 @@ state = {
   }
 
   handleTableChange = (pagination, filtersArg, sorter) => {
-    const { searchFormValues } = this.state;
+    const { searchFormValues,} = this.state;
     const filters = Object.keys(filtersArg).reduce((obj, key) => {
       const newObj = { ...obj };
       newObj[key] = getValue(filtersArg[key]);
@@ -305,14 +309,18 @@ state = {
       pageSize: pagination.pageSize,
       ...searchFormValues,
       ...filters,
+      offset:pagination.current,
     };
     if (sorter.field) {
       params.sort = sorter.field;
       params.direction = sorter.order == "descend" ? "DESC" :  "ASC";
 
     }
-    this.loadListData(params)
-  }
+    
+    this.setState({pagination},()=>{
+      this.loadListData(params)
+    })
+  } 
 
   handleFormReset = () => {
     const { form } = this.props;
@@ -370,6 +378,7 @@ state = {
     const { selectedRows, searchFormValues } = this.state;
     const mapPropsToFields = () => ({ 
             question:{value:searchFormValues.question},
+            keyword:{value:searchFormValues.keyword},
           })
     SearchForm = Form.create({mapPropsToFields})(SearchForm)    
     return (
@@ -397,10 +406,8 @@ state = {
       if (!err) {
         console.log(values)
         values.publishDay = moment(values.publishDay).format(dayFormat)
-        // values.answer = values.answer.file.name 
-        values.answer = values.answer.file.response.data[0].fileName
         values.answer = values.answer.editorContent
-        this.save(values)
+        // this.save(values)
       }
     });
   }
@@ -438,7 +445,7 @@ state = {
         data: {
             offset: 1,
             limit: 1,
-            lastTendencyId:id,
+            questionStoreId:id,
         },
         dataType: 'json',
         doneResult: data => {
@@ -464,7 +471,7 @@ state = {
         data: {
             offset: 1,
             limit: 1,
-            lastTendencyId:id,
+            questionStoreId:id,
         },
         dataType: 'json',
         doneResult: data => {
@@ -498,6 +505,15 @@ state = {
     }    
     callback && callback()
     }
+    
+    getKeywods=(list)=>{
+      let string='';
+      list.map(d=>{
+        string+=d.keyword+";"
+      });
+      return string;
+    }
+
 
 
   render() {
@@ -513,11 +529,11 @@ state = {
       },
       {
         title: '关键字',
-        dataIndex: 'params',
+        dataIndex: 'keywords',
       },
       {
         title: '创建时间',
-        dataIndex: 'createTimeString',
+        dataIndex: 'createTime',
         sorter: true,
       },
      
@@ -540,6 +556,7 @@ state = {
         let list = {
             index: ((pagination.current - 1) || 0) * pagination.pageSize + i + 1,
             id:d.questionStoreId,
+            keywords:this.getKeywods(d.questionStoreKeywordList),
             ...d,
         }
         lists.push(list)
@@ -560,6 +577,7 @@ state = {
       isEdit ?        
         { 
             question:{value:detail.question},
+            questionStoreKeywordList:{value:detail.questionStoreKeywordList},
             answer:{value:{editorContent:detail.answer}},
         } : null
       ) 
@@ -578,6 +596,7 @@ state = {
               columns={columns}
               pagination={paginationProps}
               onChange={this.handleTableChange}
+              scroll={{y:lists.length > config.listLength ? config.scroll.y : null}}
             />
             <Modal
                 title={isEdit ? '修改动态':'新建动态'}

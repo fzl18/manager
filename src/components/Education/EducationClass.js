@@ -214,7 +214,7 @@ state = {
   }
 
   handleTableChange = (pagination, filtersArg, sorter) => {
-    const { searchFormValues } = this.state;
+    const { searchFormValues,} = this.state;
     const filters = Object.keys(filtersArg).reduce((obj, key) => {
       const newObj = { ...obj };
       newObj[key] = getValue(filtersArg[key]);
@@ -226,14 +226,18 @@ state = {
       pageSize: pagination.pageSize,
       ...searchFormValues,
       ...filters,
+      offset:pagination.current,
     };
     if (sorter.field) {
       params.sort = sorter.field;
       params.direction = sorter.order == "descend" ? "DESC" :  "ASC";
 
     }
-    this.loadListData(params)
-  }
+    
+    this.setState({pagination},()=>{
+      this.loadListData(params)
+    })
+  } 
 
   handleFormReset = () => {
     const { form } = this.props;
@@ -319,12 +323,13 @@ state = {
     sort = () => {
         const {listData} = this.state;
         const sortList = [];
+        
         listData.map(item => {
             // if (item.moduleDefineName != '录入者'){
-            //     sortList.push({
-            //         key: item.moduleDefineCode,
-            //         name: item.moduleDefineName,
-            //     });
+                sortList.push({
+                    key: item.order,
+                    name: item.categoryName,
+                });
             // }
         });
         this.sortListRef.show(sortList);
@@ -346,6 +351,7 @@ state = {
         url: isEdit ? API_URL.education.modifyPopularScienceCategory :  API_URL.education.addPopularScienceCategory,
         data: {
             ...params,
+            popularScienceCategoryId: isEdit ? editId : null
         },
         dataType: 'json',
         doneResult: data => {
@@ -371,7 +377,7 @@ state = {
         data: {
             offset: 1,
             limit: 1,
-            lastTendencyId:id,
+            popularScienceCategoryId:id,
         },
         dataType: 'json',
         doneResult: data => {
@@ -500,6 +506,7 @@ state = {
               columns={columns}
               pagination={paginationProps}
               onChange={this.handleTableChange}
+              scroll={{y:lists.length > config.listLength ? config.scroll.y : null}}
             />
             <Modal
                 title={isEdit ? '修改动态':'新建动态'}

@@ -1,10 +1,11 @@
-import React, {Component} from 'react';
-import $ from '../../common/AjaxRequest';
-import moment from 'moment';
-import API_URL from '../../common/url';
-import { Row, Col, Popconfirm,  Card,Table, Form, Input, Select, Icon, Button, Dropdown, Menu, InputNumber, DatePicker, Modal, message, Upload, notification  } from 'antd';
-import Editor from '../common/Editor';
-import {config,uploadser} from '../common/config';
+import React, {Component} from 'react'
+import {Route, Redirect, Link} from "react-router-dom"
+import $ from '../../common/AjaxRequest'
+import moment from 'moment'
+import API_URL from '../../common/url'
+import { Row, Col, Popconfirm,  Card,Table, Form, Input, Select, Icon, Button, Dropdown, Menu, InputNumber, DatePicker, Modal, message, Upload, notification  } from 'antd'
+import Editor from '../common/Editor'
+import {config,uploadser} from '../common/config'
 
 const FormItem = Form.Item;
 const { Option } = Select;
@@ -57,7 +58,7 @@ class FormBox extends React.Component {
         uid: -1,
         name: 'xxx.png',
         status: 'done',
-        url: `http://${imgUrl}`
+        url: imgUrl
       }]: []
       this.setState({
         fileList
@@ -186,9 +187,32 @@ class SearchForm extends Component {
         const { getFieldDecorator } = this.props.form;
         return (
             <Form onSubmit={this.props.handleSearch} layout="inline">
-                <FormItem label="动态标题">
-                {getFieldDecorator('lastTendencyTitle')(
-                    <Input placeholder="请输入标题" />
+                <FormItem label="问题概要">
+                {getFieldDecorator('gy')(
+                    <Input placeholder="" />
+                )}
+                </FormItem>
+                <FormItem label="提问者">
+                {getFieldDecorator('user')(
+                    <Input placeholder="" style={{width:100}}/>
+                )}
+                </FormItem>
+                <FormItem label="咨询对象">
+                {getFieldDecorator('ob')(
+                    <Input placeholder="" style={{width:100}}/>
+                )}
+                </FormItem>
+                <FormItem label="协助解答者">
+                {getFieldDecorator('jd')(
+                    <Input placeholder="" style={{width:100}}/>
+                )}
+                </FormItem>
+                <FormItem label="是否设为热门">
+                {getFieldDecorator('hot')(
+                    <Select style={{width:80}} allowClear >
+                      <Option value='1'>是</Option>
+                      <Option value='0'>否</Option>
+                    </Select>
                 )}
                 </FormItem>
                 <Button icon="search" type="primary" htmlType="submit" style={{float:'right'}}>查询</Button>
@@ -197,7 +221,7 @@ class SearchForm extends Component {
     }
 }
 
-export default class Index extends Component {
+export default class News extends Component {
 state = {
     loading:false,
     pagination:{
@@ -271,7 +295,7 @@ state = {
   }
 
   handleTableChange = (pagination, filtersArg, sorter) => {
-    const { searchFormValues } = this.state;
+    const { searchFormValues,} = this.state;
     const filters = Object.keys(filtersArg).reduce((obj, key) => {
       const newObj = { ...obj };
       newObj[key] = getValue(filtersArg[key]);
@@ -283,14 +307,18 @@ state = {
       pageSize: pagination.pageSize,
       ...searchFormValues,
       ...filters,
+      offset:pagination.current,
     };
     if (sorter.field) {
       params.sort = sorter.field;
       params.direction = sorter.order == "descend" ? "DESC" :  "ASC";
 
     }
-    this.loadListData(params)
-  }
+    
+    this.setState({pagination},()=>{
+      this.loadListData(params)
+    })
+  } 
 
   handleFormReset = () => {
     const { form } = this.props;
@@ -348,11 +376,15 @@ state = {
     const { selectedRows, searchFormValues } = this.state;
     const mapPropsToFields = () => ({ 
             lastTendencyTitle:{value:searchFormValues.lastTendencyTitle},
+            lastTendencyTitle:{value:searchFormValues.lastTendencyTitle},
+            lastTendencyTitle:{value:searchFormValues.lastTendencyTitle},
+            lastTendencyTitle:{value:searchFormValues.lastTendencyTitle},
+            lastTendencyTitle:{value:searchFormValues.lastTendencyTitle},
           })
     SearchForm = Form.create({mapPropsToFields})(SearchForm)    
     return (
         <Row gutter={2}>
-            <Col md={22} sm={24} >
+            <Col md={24} sm={24} >
                 <SearchForm handleSearch={this.handleSearch} ref = { el => {this.searchFormRef = el}}/>
             </Col>
             <Col md={2} sm={8} style={{textAlign:'right'}}>            
@@ -362,7 +394,8 @@ state = {
                     <Button type="danger" style={{marginRight:10}}> 批量删除</Button>
                 </Popconfirm>
             }            
-                <Button icon="plus" type="primary" onClick={()=>{this.changeModalView('modalVisible','open','new')}}>新建</Button>
+                {/* <Button icon="plus" type="primary" onClick={()=>{this.changeModalView('modalVisible','open','new')}}>新建</Button> */}
+                {/* <Link to='/index/news/save'><Button icon="plus" type="primary">新建</Button></Link> */}
             </Col>
         </Row>
     );
@@ -483,36 +516,61 @@ state = {
       {
         title: '序号',
         dataIndex: 'index',
+        width:60
       },
       {
-        title: '动态标题',
+        title: '问题概要',
         dataIndex: 'lastTendencyTitle',
+        width:500,
+        render:(text,record)=>{
+          return(
+            <Link to={`/consulhistory/detail/${record.id}`}>{record.lastTendencyTitle}</Link>
+          )
+        }
+      },
+      {
+        title: '提问者',
+        dataIndex: 'tw',
+        width:100
+      },      
+      {
+        title: '咨询对象',
+        dataIndex: 'ob', 
+        width:100,       
       },
       {
         title: '创建时间',
         dataIndex: 'createTimeString',
         sorter: true,
-      },      
-      {
-        title: '发布时间',
-        dataIndex: 'publishDay', 
-        sorter: true,
+        width:150,
         render: (text,record,index) => (
           moment(record.publishDay).format("YY.MM.DD")
         )
-      },      
-      {
-        title: '操作',
-        render: (text,record,index) => (
-          <div>
-            <a href="javascript:;" onClick={()=>{this.changeModalView('modalVisible','open','edit',()=>{ this.edit(record.id) })}}>修改</a>
-            <span className="ant-divider" />
-            <Popconfirm title="确定要删除吗？" onConfirm={()=>{this.del(record.id)}} okText="是" cancelText="否">
-            <a href="javascript:;" >删除</a>
-            </Popconfirm>
-          </div>
-        ),
       },
+      {
+        title: '协助解答者',
+        dataIndex: 'jd',
+        width:200
+      },
+      {
+        title: '是否设为热门',
+        dataIndex: 'hot',
+        sorter: true,
+        width:120
+      },
+      // {
+      //   title: '操作',
+      //   width:150,
+      //   render: (text,record,index) => (
+      //     <div>
+      //       <Link to={`/index/news/save/${record.id}`}>修改</Link>
+      //       <span className="ant-divider" />
+      //       <Popconfirm title="确定要删除吗？" onConfirm={()=>{this.del(record.id)}} okText="是" cancelText="否">
+      //       <a href="javascript:;" >删除</a>
+      //       </Popconfirm>
+      //     </div>
+      //   ),
+      // },
     ];
 
     const lists = []
@@ -533,9 +591,8 @@ state = {
     const paginationProps = {
       // showSizeChanger: true,
       // showQuickJumper: true,
-      ...pagination,
+      ...pagination,      
     };
-
     const mapPropsToFields = () => (        
       isEdit ?        
         { 
@@ -561,6 +618,7 @@ state = {
               columns={columns}
               pagination={paginationProps}
               onChange={this.handleTableChange}
+              scroll={{y:lists.length > config.listLength ? config.scroll.y : null}}
             />
             <Modal
                 title={isEdit ? '修改动态':'新建动态'}

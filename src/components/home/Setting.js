@@ -5,7 +5,7 @@ import API_URL from '../../common/url';
 import StringUtil from '../../common/StringUtil';
 
 
-class Login extends React.Component {
+export default class Setting extends React.Component {
     state = {
         employeeCode: '',
         passCode: '',
@@ -96,27 +96,42 @@ class Login extends React.Component {
         sessionStorage.invId = 0;
         sessionStorage.siteId = 0;
         sessionStorage.curRole = '';
+        const boxStyle = {top:'50%',
+        background:'#fff url(../../../images/footer_bg.jpg) center bottom repeat-x',
+        width:'97%',
+        position: 'inherit',
+        height: '80%',
+        margin: 'auto',
+        marginTop:'20px',
+        float:'inherit',
+        borderRadius:5}
+        const bottomStyle={lineHeight:'40px',height:'40px',marginBottom:20}
+        const formStyle={display:'inline-block', float:'right',boxShadow:'inherit',width:500,marginLeft:-220,marginTop:20}
         return (
-            <div className="index-login" >                  
-             <div className="wrap-login">
-                  
-                <div className="con-bg"></div>
-                <div className='login form-signin' style={{display:'inline-block', float:'right'}} >   
-                    {/* <div className="form-signin-heading">医院科室微信公众号管理系统</div> */}
-                    <Input style={{lineHeight:'40px',height:'40px',marginBottom:20}} size="large" prefix={<Icon type="user" style={{ color:'rgba(0, 110, 249,.7)',fontSize:17}} />}  id="username" onBlur={this.nameInput} placeholder="用户名" />
-                    <Input style={{lineHeight:'40px',height:'40px',marginBottom:20}} size="large" prefix={<Icon type="lock" style={{ color:'rgba(0, 110, 249,.7)',fontSize:17 }} />}  id="password" onBlur={this.passInput} placeholder="密码" />
-                    <Button className="btn btn-lg btn-primary btn-block" id="loginBtn" type="primary" onClick={this.login}>登录</Button>
+            <div className="index-login" style={{background:'#F1F2F6'}}>
+             <div className='head' style={{background:'#fff',height:70,lineHeight:'70px'}}>
+                <div style={{marginLeft:'50px',fontSize:18}}><img src="../../../images/logo.png" width='40' style={{marginRight:10}}/>微信应用管理系统</div>
+                <div style={{float:'right',marginRight:50,}}></div>
+             </div>
+             <div className="wrap-login" style={boxStyle}>
+                <div className='login form-signin' style={formStyle} >   
+                    <div style={{color:'#188FFF',fontSize:18,textAlign:'center',marginBottom:20}}><i className="iconfont icon-mima" style={{fontSize:30,marginRight:10}}/> 修改密码</div>
+                    <Input style={bottomStyle} size="large" prefix={<Icon type="unlock" style={{ color:'rgba(0, 110, 249,.7)',fontSize:17}} />}  id="username" onBlur={this.nameInput} placeholder="原密码" />
+                    <Input style={bottomStyle} size="large" prefix={<Icon type="lock" style={{ color:'rgba(0, 110, 249,.7)',fontSize:17 }} />}  id="password" onBlur={this.passInput} placeholder="新密码" />
+                    <Input style={bottomStyle} size="large" prefix={<Icon type="lock" style={{ color:'rgba(0, 110, 249,.7)',fontSize:17 }} />}  id="password" onBlur={this.passInput} placeholder="确认密码" />
+                    <div style={{textAlign:'center'}}>
+                        <Button className="btn btn-lg" id="loginBtn" type="primary" onClick={this.login} style={{width:'45%'}}>登录</Button>
+                        <Button className="btn btn-lg" onClick={()=>{this.props.history.goBack()}} style={{width:'45%',marginLeft:10,background:'#555'}}>返回</Button>
+                    </div>
                 </div>
                 
                 </div>
-                 <div className="footer">
-				 <div className="footerWrap">
-					<p>版权所有&copy; 复旦大学附属肿瘤医院大肠外科    技术支持:无锡慧方科技有限公司</p>
-				</div>
-			 </div>
+                 <div className="footer" style={{height:'40px',lineHeight:'40px',background:'none',color:'#333',padding:0}}>
+					版权所有&copy; 复旦大学附属肿瘤医院大肠外科    技术支持:无锡慧方科技有限公司				
+			    </div>
 		    </div>
         );
     }
 }
 
-export default Login;
+

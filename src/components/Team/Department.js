@@ -6,6 +6,7 @@ import { Row, Col, Popconfirm,  Card,Table, Form, Input, Select, Icon, Button, D
 import Editor from '../common/Editor';
 import {config,uploadser} from '../common/config';
 
+const { TextArea } = Input;
 const FormItem = Form.Item;
 const { Option } = Select;
 const getValue = obj => Object.keys(obj).map(key => obj[key]).join(',');
@@ -179,6 +180,18 @@ class FormBox extends React.Component {
               </FormItem>
               <FormItem
                 {...formItemLayout}
+                label="简介"
+              >
+                {getFieldDecorator('introduction', {
+                  rules: [{
+                    required: true,message:'请输入简介'
+                  }],
+                })(
+                  <TextArea />
+                )}
+              </FormItem>
+              <FormItem
+                {...formItemLayout}
                 label="介绍"
               >
                 {getFieldDecorator('htmlText', {
@@ -282,7 +295,7 @@ state = {
   }
 
   handleTableChange = (pagination, filtersArg, sorter) => {
-    const { formValues } = this.state;
+    const { searchFormValues,} = this.state;
     const filters = Object.keys(filtersArg).reduce((obj, key) => {
       const newObj = { ...obj };
       newObj[key] = getValue(filtersArg[key]);
@@ -292,18 +305,20 @@ state = {
     const params = {
       currentPage: pagination.current,
       pageSize: pagination.pageSize,
-      ...formValues,
+      ...searchFormValues,
       ...filters,
+      offset:pagination.current,
     };
     if (sorter.field) {
-      params.sorter = `${sorter.field}_${sorter.order}`;
-    }
+      params.sort = sorter.field;
+      params.direction = sorter.order == "descend" ? "DESC" :  "ASC";
 
-    // dispatch({
-    //   type: 'rule/fetch',
-    //   payload: params,
-    // });
-  }
+    }
+    
+    this.setState({pagination},()=>{
+      this.loadListData(params)
+    })
+  } 
 
   handleFormReset = () => {
     const { form } = this.props;
@@ -508,6 +523,7 @@ state = {
             departmentMainImg:{value:detail.mainImgUuid},
             departmentLogoImgUrl:{value:detail.logoImgUuidUrl},
             departmentMainImgUrl:{value:detail.mainImgUuidUrl},
+            introduction:{value:detail.introduction},
             htmlText:{value:{editorContent:detail.htmlText}},
         } 
       ) 

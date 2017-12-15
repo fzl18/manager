@@ -6,11 +6,62 @@ import { Row, Col, Popconfirm,  Card,Table, Form, Input, Select, Icon, Button, D
 import {config} from '../common/config';
 
 const FormItem = Form.Item;
+const {RangePicker} = DatePicker
 const { Option } = Select;
 const getValue = obj => Object.keys(obj).map(key => obj[key]).join(',');
 const dayFormat = 'YYYY-MM-DD'
 
-
+class FormBox extends React.Component {
+  
+    render(){
+        const {getFieldDecorator}=this.props.form
+        const formItemLayout = {
+          labelCol: {
+            xs: { span: 24 },
+            sm: { span: 7 },
+          },
+          wrapperCol: {
+            xs: { span: 24 },
+            sm: { span: 12 },
+            md: { span: 10 },
+          },
+        };
+    
+        const submitFormLayout = {
+          wrapperCol: {
+            xs: { span: 24, offset: 0 },
+            sm: { span: 10, offset: 7 },
+          },
+        };        
+        return(
+            <div>
+            <Form onSubmit={this.props.handleSubmit} style={{ marginTop: 8 }}
+            >
+              <FormItem
+                {...formItemLayout}
+                label="时间段"
+              >
+                {getFieldDecorator('exportDate', {
+                  rules: [{
+                    required: true, message: '选择时间段',
+                  }],
+                })(
+                  <RangePicker />
+                )}
+              </FormItem>
+ 
+              <FormItem {...submitFormLayout} style={{ marginTop: 32 }}>
+                <Button type="primary" htmlType="submit">
+                  提交
+                </Button>
+                <Button style={{ marginLeft: 8 }} onClick={this.props.changeModalView.bind(this,'modalVisible','close')}>取消</Button>
+              </FormItem>
+            </Form>
+           </div>
+          
+        )
+    }
+  }
 
 class SearchForm extends Component {
     render(){
@@ -18,25 +69,25 @@ class SearchForm extends Component {
         return (
             <Form onSubmit={this.props.handleSearch} layout="inline">
                 <FormItem label="姓名">
-                {getFieldDecorator('name')(
+                {getFieldDecorator('userCompellation')(
                     <Input placeholder="请输入姓名" />
                 )}
                 </FormItem>
                 <FormItem label="手机号">
-                {getFieldDecorator('mobile')(
+                {getFieldDecorator('userMobile')(
                     <Input placeholder="请输入手机号" />
                 )}
                 </FormItem>
                 <FormItem label="住院号">
-                {getFieldDecorator('num')(
+                {getFieldDecorator('hospitalCode')(
                     <Input placeholder="请输入住院号" />
                 )}
                 </FormItem>
                 <FormItem label="绑定状态">
-                {getFieldDecorator('name')(
+                {getFieldDecorator('status')(
                     <Select allowClear style={{width:120}}>
-                        <Option value="1">已绑定</Option>
-                        <Option value="0">未绑定</Option>
+                        <Option value="ACTIVE">已绑定</Option>
+                        <Option value="INACTIVE">已解绑</Option>
                     </Select>
                 )}
                 </FormItem>
@@ -71,7 +122,7 @@ state = {
     });
     const options ={
         method: 'POST',
-        url: API_URL.index.queryLastTendencyList,
+        url: API_URL.usermanager.queryPatients,
         data: {
             offset: 1,
             limit: pagination.pageSize,
@@ -120,7 +171,7 @@ state = {
   }
 
   handleTableChange = (pagination, filtersArg, sorter) => {
-    const { searchFormValues } = this.state;
+    const { searchFormValues,} = this.state;
     const filters = Object.keys(filtersArg).reduce((obj, key) => {
       const newObj = { ...obj };
       newObj[key] = getValue(filtersArg[key]);
@@ -132,14 +183,18 @@ state = {
       pageSize: pagination.pageSize,
       ...searchFormValues,
       ...filters,
+      offset:pagination.current,
     };
     if (sorter.field) {
       params.sort = sorter.field;
       params.direction = sorter.order == "descend" ? "DESC" :  "ASC";
 
     }
-    this.loadListData(params)
-  }
+    
+    this.setState({pagination},()=>{
+      this.loadListData(params)
+    })
+  } 
 
   handleFormReset = () => {
     const { form } = this.props;
@@ -210,7 +265,10 @@ state = {
   renderSearchForm() {
     const { selectedRows, searchFormValues } = this.state;
     const mapPropsToFields = () => ({ 
-            lastTendencyTitle:{value:searchFormValues.lastTendencyTitle},
+            userCompellation:{value:searchFormValues.userCompellation},
+            userMobile:{value:searchFormValues.userMobile},
+            hospitalCode:{value:searchFormValues.hospitalCode},
+            status:{value:searchFormValues.status},
           })
     SearchForm = Form.create({mapPropsToFields})(SearchForm)    
     return (
@@ -231,16 +289,21 @@ state = {
     );
   }
 
+  export=(v)=>{
+    console.log(v)
+    this.changeModalView('modalVisible','close')
+  }
+
 
   handleSubmit = (e) => {
     e.preventDefault();
     this.formboxref.validateFieldsAndScroll((err, values) => {      
       if (!err) {
-        values.publishDay = moment(values.publishDay).format(dayFormat)
-        // values.mainImgName = values.mainImgName.file.name 
-        values.mainImgName = 'xxx.jpg'
-        values.htmlText = values.htmlText.editorContent
-        this.save(values)
+        values.start = moment(values.exportDate[0]).format(dayFormat)
+        values.end = moment(values.exportDate[1]).format(dayFormat)
+        values.exportDate = null
+        // this.save(values)
+        this.export(values)
       }
     });
   }
@@ -346,38 +409,45 @@ state = {
       {
         title: '序号',
         dataIndex: 'index',
+        width:60,
       },
       {
         title: '姓名',
-        dataIndex: 'name',
+        dataIndex: 'userCompellation',
+        width:120,
       },
       {
         title: '手机号码',
-        dataIndex: 'mobile',
-        
+        dataIndex: 'userMobile',
+        width:150,
       },      
       {
         title: '住院号',
-        dataIndex: 'num', 
-        
+        dataIndex: 'hospitalCode', 
+        width:120,
       },      
       {
         title: '微信号',
-        dataIndex: 'wx', 
-        
+        dataIndex: 'openId', 
+        width:120,
       },
       {
         title: '微信昵称',
-        dataIndex: 'wx2', 
+        dataIndex: 'nickName', 
+        width:100,
       },
       {
         title: '绑定状态',
-        dataIndex: 'bind', 
+        dataIndex: 'status', 
+        width:80,
+        render:(text,react)=>
+          react.status == "INACTIVE" ? "已解绑" : react.status == "ACTIVE" ? "已绑定" : "未知"
       },
       {
         title: '最近一次绑定时间',
-        dataIndex: 'lasttime', 
-        sorter: true,
+        dataIndex: 'lastAccessTime', 
+        width:150,
+        sorter: true,        
       },
     ];
 
@@ -385,7 +455,7 @@ state = {
     listData.map((d,i)=>{
         let list = {
             index: ((pagination.current - 1) || 0) * pagination.pageSize + i + 1,
-            id:d.lastTendencyId,
+            id:d.userId,
             ...d,
         }
         lists.push(list)
@@ -405,13 +475,15 @@ state = {
     const mapPropsToFields = () => (        
       isEdit ?        
         { 
-            lastTendencyTitle:{value:detail.lastTendencyTitle},
-            mainImgName:{value:detail.mainImgName},
-            publishDay:{value:moment(detail.publishDay)},
-            htmlText:{value:{editorContent:detail.htmlText}},
+            userCompellation:{value:detail.userCompellation},
+            userMobile:{value:detail.userMobile},
+            lastAccessTime:{value:moment(detail.lastAccessTime)},
+            nickName:{value:detail.nickName},
+            openId:{value:detail.openId},
+            status:{value: detail.status},
         } : null
       ) 
-    // FormBox=Form.create({mapPropsToFields})(FormBox)
+    FormBox=Form.create({mapPropsToFields})(FormBox)
     return (
       <div>
             <div>
@@ -426,17 +498,19 @@ state = {
               columns={columns}
               pagination={paginationProps}
               onChange={this.handleTableChange}
+              scroll={{y:lists.length > config.listLength ? config.scroll.y : null}}
             />
-            {/* <Modal
-                title={isEdit ? '修改动态':'新建动态'}
+            <Modal
+                title={'导出'}
                 visible={modalVisible}
-                width={800}
+                width={550}
                 onOk={this.handleAdd}
                 onCancel={this.changeModalView.bind(this,'modalVisible','close')}
                 footer={null}
             >
-               <FormBox ref={el=>{this.formboxref = el}} closeModalView={this.changeModalView} handleSubmit={this.handleSubmit}/>
-            </Modal> */}
+               <FormBox ref={el=>{this.formboxref = el}} changeModalView={this.changeModalView} handleSubmit={this.handleSubmit}/>
+            </Modal>
+            
       </div>
     );
   }

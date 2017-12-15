@@ -7,6 +7,7 @@ import routes from './router';
 import PrivateRoute from './components/auth/PrivateRoute';
 import App from './components/App';
 import Login from './components/home/Login';
+import Setting from './components/home/Setting';
 import './style/antd.min.css';
 
 //TODO:https-saml
@@ -26,7 +27,8 @@ ReactDOM.render(
     <Provider store={store}>
         <HashRouter>
             <div className="router-index">
-            <Route path="/login" component={Login} isLogin={true} />    
+            <Route path="/login" component={Login} isLogin={true} />
+            <Route path="/setting" component={(props)=> <Setting {...props}/>} />
             <App location={location}>
                 
                 {

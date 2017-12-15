@@ -1,4 +1,5 @@
 import React from 'react';
+import {Link} from 'react-router-dom';
 import { Layout, Menu, Icon, Breadcrumb, Dropdown, Avatar, Col,Row } from 'antd';
 //import Header from './layout/Header';
 //import Footer from './layout/Footer';
@@ -125,8 +126,8 @@ class App extends React.Component {
                 />
                 {/* <Dropdown overlay={menu}> */}
                 {/* <Dropdown> */}
-                <span className="action account"><a href="javascript:;"  onClick={()=>{}}><i className="iconfont icon-quit" style={{fontSize:22}} /></a></span>
-                <span className="action account"><a href="javascript:;"  onClick={()=>{}}><i className="iconfont icon-shezhi" style={{fontSize:22}} /></a></span>
+                <span className="action account"><Link to='/login'><i className="iconfont icon-quit" style={{fontSize:22}} /></Link></span>
+                <span className="action account"><Link to='/setting'><i className="iconfont icon-shezhi" style={{fontSize:22}} /></Link></span>
                 
                   <span className="action account">
                     <Avatar size="small" className="avatar" />
@@ -138,7 +139,7 @@ class App extends React.Component {
               <Breadcrumb style={{padding:16,borderTop:'2px solid #eee'}}>
                 {breadList}
               </Breadcrumb>
-              <Content style={{ margin: '24px 16px 0 16px', padding: 24, background: '#fff'}}>
+              <Content style={{ margin: '20px 16px 0 16px', padding: 20, background: '#fff'}}>
               { this.props.children }
               </Content>
               <Footer style={{ textAlign: 'center' }}>

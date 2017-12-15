@@ -1,5 +1,5 @@
 const DEV = {
-    ADMIN_URL: 'http://192.168.10.202:12003/manager',
+    ADMIN_URL: 'http://192.168.10.166:8095/manager',
     SAML_URL: '/saml',
     LOGOUT_URL: './',
 };
@@ -11,7 +11,7 @@ const TEST = {
 };
 
 const LOC = {
-    ADMIN_URL: 'http://localhost:12003/manager',
+    ADMIN_URL: 'http://localhost:12003/manager',    
     SAML_URL: '/front',
     LOGOUT_URL: './',
 };
@@ -27,8 +27,8 @@ const CONFIG = window.configs;
 export let ENV = DEV;
 // export let ENV = TEST;
 // export const ENV = PRODUCTION;
-// const ENV = CONFIG;
-//  const ENV = LOC;
+//  const ENV = CONFIG;
+// const ENV = LOC;
 
 
 export {ENV as default};
