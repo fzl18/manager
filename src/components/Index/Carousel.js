@@ -4,8 +4,9 @@ import moment from 'moment';
 import API_URL from '../../common/url';
 import { Row, Col, Popconfirm,  Card,Table, Form, Input, Select, Icon, Button, Dropdown, Menu, InputNumber, DatePicker, Modal, message, Upload, notification  } from 'antd';
 import Editor from '../common/Editor';
+import Ueditor from '../../common/Ueditor/Ueditor';
 import {config,uploadser} from '../common/config';
-import styles from './style.less';
+import SortList from '../common/SortList';
 
 const FormItem = Form.Item;
 const { Option } = Select;
@@ -41,7 +42,7 @@ class FormBox extends React.Component {
 
     validateHtml=(rule, value, callback)=>{      
       if(value){
-        let html = this.delHtmlTag(value.editorContent)
+        let html = this.delHtmlTag(value)
         if (html) {
           callback();
           return;
@@ -102,7 +103,7 @@ class FormBox extends React.Component {
             xs: { span: 24, offset: 0 },
             sm: { span: 10, offset: 7 },
           },
-        };        
+        };       
         return(
             <div>
             <Form onSubmit={this.props.handleSubmit} style={{ marginTop: 8 }}
@@ -140,7 +141,7 @@ class FormBox extends React.Component {
                   </Upload>              
                 )}
               </FormItem>
-              <FormItem
+              {/* <FormItem
                 {...formItemLayout}
                 label="首页轮播图顺序"
               >
@@ -158,7 +159,7 @@ class FormBox extends React.Component {
                     <Option value='6'>6</Option>
                   </Select>
                 )}
-              </FormItem>
+              </FormItem> */}
               <FormItem
                 {...formItemLayout}
                 label="超链接"
@@ -192,7 +193,7 @@ class SearchForm extends Component {
         const { getFieldDecorator } = this.props.form;
         return (
             <Form onSubmit={this.props.handleSearch} layout="inline">
-                <FormItem label="动态标题">
+                <FormItem label="轮播图标题">
                 {getFieldDecorator('description')(
                     <Input placeholder="请输入标题" />
                 )}
@@ -219,6 +220,7 @@ state = {
     isEdit:false,
     selectedRowKeys: [],
     totalCallNo: 0,
+    sortModalVisible:false,
   };
 
   loadListData = (params) => {
@@ -353,10 +355,12 @@ state = {
     e.preventDefault();
     this.searchFormRef.validateFields((err, fieldsValue) => {
       if (err) return;
-      this.loadListData(fieldsValue)
+      const {pagination}=this.state
+      pagination.current = 1      
       this.setState({
         searchFormValues: fieldsValue,
-      });
+        pagination
+      },()=>{this.loadListData(fieldsValue)});
     });
   }
 
@@ -387,6 +391,7 @@ state = {
                 </Popconfirm>
             }            
                 <Button icon="plus" type="primary" onClick={()=>{this.changeModalView('modalVisible','open','new')}}>新建</Button>
+                <Button style={{marginLeft:10}} icon="bar-chart" type="primary" onClick={this.sort}>排序</Button>
             </Col>
         </Row>
     );
@@ -399,7 +404,8 @@ state = {
       if (!err) {
         // values.mainImgName = values.mainImgName.file.name 
         if(values.mainImgName.file != null && values.mainImgName.file != undefined){
-          values.mainImgName = values.mainImgName.file.response.data[0].fileName
+          // values.mainImgName = values.mainImgName.file.response.data[0].fileName
+          values.mainImgName='xxx'
         }
         
         this.save(values)
@@ -500,6 +506,24 @@ state = {
     }
 
 
+     /**
+     * 排序调整
+     */
+    sort = () => {
+      const {listData} = this.state;
+      const sortList = [];      
+      listData.map(item => {
+          // if (item.moduleDefineName != '录入者'){
+              sortList.push({
+                  key: item.carrouselImgId,
+                  name: item.description,
+              });
+          // }
+      });
+      this.sortListRef.show(sortList);
+  }
+
+
   render() {
     const {loading, listData, detail, selectedRows, addInputValue, isEdit, selectedRowKeys, totalCallNo, modalVisible, pagination } = this.state;
     const columns = [
@@ -515,6 +539,7 @@ state = {
         title: '首页轮播图顺序',
         dataIndex: 'item',
         sorter: true,
+        render:(text,record)=> record.item + 1
       },      
       {
         title: '创建时间',
@@ -584,7 +609,8 @@ state = {
               scroll={{y:lists.length > config.listLength ? config.scroll.y : null}}
             />
             <Modal
-                title={isEdit ? '修改动态':'新建动态'}
+                title={isEdit ? '修改轮播图':'新建轮播图'}
+                maskClosable={false}
                 visible={modalVisible}
                 width={800}
                 onOk={this.handleAdd}
@@ -593,6 +619,13 @@ state = {
             >
                <FormBox ref={el=>{this.formboxref = el}} closeModalView={this.changeModalView} handleSubmit={this.handleSubmit}/>
             </Modal>
+            <SortList ref={el => { this.sortListRef = el; }}
+              reload={this.loadListData}
+              sortUrl={API_URL.index.sortCarrouselImg}
+              title={"排序"}
+              // data={{typeName,}}
+              data={{}}
+            />
       </div>
     );
   }

@@ -1,9 +1,10 @@
 import React, {Component} from 'react';
+import {Link} from 'react-router-dom';
 import $ from '../../common/AjaxRequest';
 import moment from 'moment';
 import API_URL from '../../common/url';
 import { Row, Col, Popconfirm,  Card,Table, Form, Input, Select, Icon, Button, Dropdown, Menu, InputNumber, DatePicker, Modal, message, Upload, notification  } from 'antd';
-import Editor from '../common/Editor';
+import Editor from '../common/Editor';import Ueditor from '../../common/Ueditor/Ueditor';
 import {config,uploadser} from '../common/config';
 
 const FormItem = Form.Item;
@@ -69,7 +70,7 @@ class FormBox extends React.Component {
 
     validateHtml=(rule, value, callback)=>{      
       if(value){
-        let html = this.delHtmlTag(value.editorContent)
+        let html = this.delHtmlTag(value)
         if (html) {
           callback();
           return;
@@ -205,7 +206,7 @@ class FormBox extends React.Component {
                     validator: this.validateHtml,
                   }],
                 })(
-                  <Editor style={{width:460}}/>
+                  <Ueditor/> //<Editor style={{width:460}}/>
                 )}
               </FormItem>
               <FormItem {...submitFormLayout} style={{ marginTop: 32 }}>
@@ -273,7 +274,7 @@ class SearchForm extends Component {
               >
                 {getFieldDecorator('popularScienceCategoryId')(
                     <Select style={{width:150}} allowClear>
-                      {listData.map( v => <Option key = {`${v.popularScienceCategoryId}`} >{v.categoryName}</Option> )}                      
+                      {listData.map( v => <Option value = {`${v.popularScienceCategoryId}`} >{v.categoryName}</Option> )}                      
                     </Select>
                 )}
               </FormItem>
@@ -419,10 +420,12 @@ state = {
     e.preventDefault();
     this.searchFormRef.validateFields((err, fieldsValue) => {
       if (err) return;
-      this.loadListData(fieldsValue)
+      const {pagination}=this.state
+      pagination.current = 1      
       this.setState({
         searchFormValues: fieldsValue,
-      });
+        pagination
+      },()=>{this.loadListData(fieldsValue)});
     });
   }
 
@@ -438,6 +441,7 @@ state = {
     const { selectedRows, searchFormValues } = this.state;
     const mapPropsToFields = () => ({ 
             popularScienceTitle:{value:searchFormValues.popularScienceTitle},
+            popularScienceCategoryId:{value:searchFormValues.popularScienceCategoryId},
           })
     SearchForm = Form.create({mapPropsToFields})(SearchForm)    
     return (
@@ -452,7 +456,7 @@ state = {
                     <Button type="danger" style={{marginRight:10}}> 批量删除</Button>
                 </Popconfirm>
             }            
-                <Button icon="plus" type="primary" onClick={()=>{this.changeModalView('modalVisible','open','new')}}>新建</Button>
+                <Link to='/education/save'><Button icon="plus" type="primary">新建</Button></Link>
             </Col>
         </Row>
     );
@@ -466,7 +470,7 @@ state = {
         console.log(values)
         values.publishTime = moment(values.publishTime).format(dayFormat)
         values.mainImgName = values.mainImgName.file ? values.mainImgName.file.response.data[0].fileName : values.mainImgName        
-        values.htmlText = values.htmlText.editorContent
+         
         this.save(values)
       }
     });
@@ -573,19 +577,23 @@ state = {
       {
         title: '序号',
         dataIndex: 'index',
+        width:60,
       },
       {
         title: '文章标题',
         dataIndex: 'popularScienceTitle',
+        width:200,
       },
       {
         title: '分类',
         dataIndex: 'popularScienceCategoryString',
+        width:150,
       },
       {
         title: '创建时间',
         dataIndex: 'createTime',
         sorter: true,
+        width:130,
         render:(text,record)=>(
           moment(record.createTime).format("YY.MM.DD HH:mm:ss")
         )
@@ -594,15 +602,17 @@ state = {
         title: '发布时间',
         dataIndex: 'publishTime', 
         sorter: true,
+        width:130,
         render:(text,record)=>(
-          moment(record.publishTime).format("YY.MM.DD HH:mm:ss")
+          moment(record.publishTime).format("YY.MM.DD")
         )
       },      
       {
         title: '操作',
+        width:120,
         render: (text,record,index) => (
           <div>
-            <a href="javascript:;" onClick={()=>{this.changeModalView('modalVisible','open','edit',()=>{ this.edit(record.id) })}}>修改</a>
+            <Link to={`/education/save/${record.id}`}>修改</Link>
             <span className="ant-divider" />
             <Popconfirm title="确定要删除吗？" onConfirm={()=>{this.del(record.id)}} okText="是" cancelText="否">
             <a href="javascript:;" >删除</a>
@@ -641,7 +651,7 @@ state = {
             mainImgUrl:{value:detail.mainImgUrl},
             popularScienceCategoryId:{value:detail.popularScienceCategoryId},
             publishTime:{value:moment(detail.publishTime)},            
-            htmlText:{value:{editorContent:detail.htmlText}},
+             htmlText:{value:detail.htmlText},
         } : null
       ) 
     FormBox=Form.create({mapPropsToFields})(FormBox)

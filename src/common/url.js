@@ -17,12 +17,16 @@ if (!STATIC) {
             uploadimg:`${ENV.ADMIN_URL}/multimedia/uploadEditorImg.do`,
             uploadser:`${ENV.ADMIN_URL}/multimedia/uploadImg.do`,
             imgpath:`/multimedia/editor/img/get.do?value=`,
+            queryHospital: `${ENV.ADMIN_URL}/department/queryHospital.do`,
+            listHospitalDepartment: `${ENV.ADMIN_URL}/department/listHospitalDepartment.do`,
+            
         },
         index:{
             queryLastTendencyList: `${ENV.ADMIN_URL}/department/queryLastTendencyList.do`,
             addLastTendency: `${ENV.ADMIN_URL}/department/addLastTendency.do`,
             deleteLastTendency: `${ENV.ADMIN_URL}/department/deleteLastTendency.do`,
             modifyLastTendency: `${ENV.ADMIN_URL}/department/modifyLastTendency.do`,
+            sortCarrouselImg: `${ENV.ADMIN_URL}/department/sortCarrouselImg.do`,
             //会议
             queryMeetingList: `${ENV.ADMIN_URL}/department/queryMeetingList.do`,
             addMeeting: `${ENV.ADMIN_URL}/department/addMeeting.do`,
@@ -42,6 +46,13 @@ if (!STATIC) {
             queryDepartment: `${ENV.ADMIN_URL}/department/queryDepartment.do`,
             addDepartment: `${ENV.ADMIN_URL}/department/modifyDepartment.do`,
             modifyDepartment: `${ENV.ADMIN_URL}/department/modifyDepartment.do`,
+            //科室团队-医生
+            queryDepartmentDoctor: `${ENV.ADMIN_URL}/department/queryDepartmentDoctor.do`,
+            addDepartmentDoctor: `${ENV.ADMIN_URL}/department/addDepartmentDoctor.do`,
+            modifyDepartmentDoctor: `${ENV.ADMIN_URL}/department/modifyDepartmentDoctor.do`,
+            removeDepartmentDoctor: `${ENV.ADMIN_URL}/department/removeDepartmentDoctor.do`,
+            sortDepartmentDoctor: `${ENV.ADMIN_URL}/department/sortDepartmentDoctor.do`,
+            // resetUserPassword: `${ENV.ADMIN_URL}/department/resetUserPassword.do`,
         },
         education:{
             queryPopularScienceCategoryList: `${ENV.ADMIN_URL}/department/queryPopularScienceCategoryList.do`,
@@ -57,6 +68,7 @@ if (!STATIC) {
         },
         question:{
             queryQuestionStoreList: `${ENV.ADMIN_URL}/department/queryQuestionStoreList.do`,
+            deleteQuestionStoreKeyword: `${ENV.ADMIN_URL}/department/deleteQuestionStoreKeyword.do`,
             addQuestionStore: `${ENV.ADMIN_URL}/department/addQuestionStore.do`,
             deleteQuestionStore: `${ENV.ADMIN_URL}/department/deleteQuestionStore.do`,
             modifyQuestionStore: `${ENV.ADMIN_URL}/department/modifyQuestionStore.do`,            
@@ -71,7 +83,20 @@ if (!STATIC) {
             addAssisantByHospitalDepartmentId: `${ENV.ADMIN_URL}/department/addAssisantByHospitalDepartmentId.do`,
             modifyAssisantByHospitalDepartmentId: `${ENV.ADMIN_URL}/department/modifyAssisantByHospitalDepartmentId.do`,
             removeAssisantByHospitalDepartmentId: `${ENV.ADMIN_URL}/department/removeAssisantByHospitalDepartmentId.do`,
-            
+            resetUserPassword: `${ENV.ADMIN_URL}/department/resetUserPassword.do`,
+        },
+        serive:{
+            queryServiceDetail:`${ENV.ADMIN_URL}/department/queryServiceDetail.do`,
+        },
+        consul:{
+            queryConversation:`${ENV.ADMIN_URL}/conversation/queryConversation.do`,
+            queryHotConversation:`${ENV.ADMIN_URL}/conversation/queryHotConversation.do`,
+            queryHotConversationDetail:`${ENV.ADMIN_URL}/conversation/queryHotConversationDetail.do`,
+            addHotConversationUserDefined:`${ENV.ADMIN_URL}/conversation/addHotConversationUserDefined.do`,
+            modifyHotConversationUserDefined:`${ENV.ADMIN_URL}/conversation/modifyHotConversationUserDefined.do`,
+            topHotConversation:`${ENV.ADMIN_URL}/conversation/topHotConversation.do`,
+            removeHotConversation:`${ENV.ADMIN_URL}/conversation/removeHotConversation.do`,
+            addHotConversationManual:`${ENV.ADMIN_URL}/conversation/addHotConversationManual.do`,
         }
 	};
 }

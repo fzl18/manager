@@ -84,7 +84,7 @@ class SearchForm extends Component {
                 )}
                 </FormItem>
                 <FormItem label="绑定状态">
-                {getFieldDecorator('status')(
+                {getFieldDecorator('bindStatus')(
                     <Select allowClear style={{width:120}}>
                         <Option value="ACTIVE">已绑定</Option>
                         <Option value="INACTIVE">已解绑</Option>
@@ -247,10 +247,12 @@ state = {
     e.preventDefault();
     this.searchFormRef.validateFields((err, fieldsValue) => {
       if (err) return;
-      this.loadListData(fieldsValue)
+      const {pagination}=this.state
+      pagination.current = 1      
       this.setState({
         searchFormValues: fieldsValue,
-      });
+        pagination
+      },()=>{this.loadListData(fieldsValue)});
     });
   }
 
@@ -268,7 +270,7 @@ state = {
             userCompellation:{value:searchFormValues.userCompellation},
             userMobile:{value:searchFormValues.userMobile},
             hospitalCode:{value:searchFormValues.hospitalCode},
-            status:{value:searchFormValues.status},
+            bindStatus:{value:searchFormValues.bindStatus},
           })
     SearchForm = Form.create({mapPropsToFields})(SearchForm)    
     return (
@@ -438,10 +440,10 @@ state = {
       },
       {
         title: '绑定状态',
-        dataIndex: 'status', 
+        dataIndex: 'bindStatus', 
         width:80,
         render:(text,react)=>
-          react.status == "INACTIVE" ? "已解绑" : react.status == "ACTIVE" ? "已绑定" : "未知"
+          react.bindStatus == "INACTIVE" ? "已解绑" : react.bindStatus == "ACTIVE" ? "已绑定" : "未知"
       },
       {
         title: '最近一次绑定时间',
@@ -480,7 +482,7 @@ state = {
             lastAccessTime:{value:moment(detail.lastAccessTime)},
             nickName:{value:detail.nickName},
             openId:{value:detail.openId},
-            status:{value: detail.status},
+            bindStatus:{value: detail.bindStatus},
         } : null
       ) 
     FormBox=Form.create({mapPropsToFields})(FormBox)

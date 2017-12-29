@@ -5,13 +5,13 @@ const DEV = {
 };
 
 const TEST = {
-    ADMIN_URL: 'http://192.168.10.126:8501/portal',
+    ADMIN_URL: 'http://192.168.10.202:12003/manager',  //179
     SAML_URL: '/saml',
     LOGOUT_URL: './',
 };
 
 const LOC = {
-    ADMIN_URL: 'http://localhost:12003/manager',    
+    ADMIN_URL: 'http://localhost:12003/manager',
     SAML_URL: '/front',
     LOGOUT_URL: './',
 };
@@ -24,10 +24,10 @@ const PRODUCTION = {
 
 const CONFIG = window.configs;
 
-export let ENV = DEV;
-// export let ENV = TEST;
-// export const ENV = PRODUCTION;
-//  const ENV = CONFIG;
+// export let ENV = DEV;
+export let ENV = TEST;
+//export const ENV = PRODUCTION;
+// const ENV = CONFIG;
 // const ENV = LOC;
 
 

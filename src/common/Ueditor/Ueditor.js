@@ -1,47 +1,60 @@
 import React, { Component } from 'react';
-import '../../../lib/ueditor/ueditor.config.js';       
+import {config,uploadser} from '../../components/common/config';
+import '../../../lib/ueditor/ueditor.config.js';
 import '../../../lib/ueditor/ueditor.all.min.js';       
 import '../../../lib/ueditor/lang/zh-cn/zh-cn.js';
 
+
 class Ueditor extends Component{
- state = {}
+  constructor(props){
+    super(props);
+    const values = this.props.value || '';
+    this.state = {value:values};
+  }
  componentDidMount(){
-   this.initEditor();
+   setTimeout(()=>{this.initEditor()},200)
  }
+
  componentWillUnmount() {
-   // 组件卸载后，清除放入库的id
-   const {id} = this.props;
-   UE.delEditor(id);
+  //  组件卸载后，清除放入库的id
+  UE.delEditor(this.props.id)
  }
 
  
  initEditor = () =>{
-  const {initialFrameHeight,initialFrameWidth} = this.props;
-  const id = this.props.id;
-  const ueEditor = UE.getEditor(this.props.id, {initialFrameHeight: initialFrameHeight, initialFrameWidth: initialFrameWidth });
-  const self = this;
+  const {initialFrameHeight,initialFrameWidth} = config;
+  const {value}=this.state
+  const {id} = this.props;
+  const ueEditor = UE.getEditor(this.props.id, {initialFrameHeight: initialFrameHeight || '300', initialFrameWidth: initialFrameWidth || '600'})
+  const self = this; 
   ueEditor.ready((ueditor) => {
     if (!ueditor) {
       UE.delEditor(id);
       self.initEditor();
     }
     if(ueditor){
-      ueEditor.setContent(this.props.uContent);
-      if(id == "uContent"){
-        ueEditor.addListener("selectionchange",function(){  
-          var editor=UE.getEditor('uContent');
-          var arr =(UE.getEditor('uContent').getContentTxt());  
-          self.props.uContentChange(arr.substring(0,30));
-        })
+      if(this.props.value){
+        ueEditor.setContent(value)
       }
+      ueEditor.addListener("contentChange",function(){       
+        let value =UE.getEditor(id).getContent();
+        self.setState({
+            value
+        },()=>{
+            const onChange = self.props.onChange;
+            if (onChange) {
+              onChange(value);
+            }
+        });
+      })
     }
-    
   })
  }
 
  componentWillReceiveProps(nextProps){
-  if(nextProps.uContent !== this.props.uContent){
-    this.initEditor();//抖动问题
+  if ('value' in nextProps) {
+    const value = nextProps.value;
+    this.setState({value});
   }
  }
 

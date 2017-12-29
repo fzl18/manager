@@ -1,9 +1,11 @@
 import React, {Component} from 'react';
 import $ from '../../common/AjaxRequest';
+import {Link} from 'react-router-dom'
 import moment from 'moment';
 import API_URL from '../../common/url';
 import { Row, Col, Popconfirm,  Card,Table, Form, Input, Select, Icon, Button, Dropdown, Menu, InputNumber, DatePicker, Modal, message, Upload, notification  } from 'antd';
 import Editor from '../common/Editor';
+import Ueditor from '../../common/Ueditor/Ueditor';
 import SelectCitys from '../common/SelectCitys';
 import {config,uploadser} from '../common/config';
 
@@ -42,7 +44,7 @@ class FormBox extends React.Component {
   
     validateHtml=(rule, value, callback)=>{      
         if(value){
-            let html = this.delHtmlTag(value.editorContent)
+            let html = this.delHtmlTag(value)
             if (html) {
                 callback();
             return;
@@ -87,24 +89,7 @@ class FormBox extends React.Component {
             <div className="ant-upload-text">上传图片</div>
           </div>
         );
-        const formItemLayout = {
-          labelCol: {
-            xs: { span: 24 },
-            sm: { span: 7 },
-          },
-          wrapperCol: {
-            xs: { span: 24 },
-            sm: { span: 12 },
-            md: { span: 10 },
-          },
-        };
-    
-        const submitFormLayout = {
-          wrapperCol: {
-            xs: { span: 24, offset: 0 },
-            sm: { span: 10, offset: 7 },
-          },
-        };        
+        const {formItemLayout,submitFormLayout} = config          
         return(
             <div>
             <Form onSubmit={this.props.handleSubmit} style={{ marginTop: 8 }}
@@ -177,7 +162,7 @@ class FormBox extends React.Component {
                 {getFieldDecorator('htmlText', {
                   rules: [{validator:this.validateHtml}],
                 })(
-                  <Editor style={{width:460}}/>
+                  <Ueditor/> //<Editor style={{width:460}}/>
                 )}
               </FormItem>
               <FormItem {...submitFormLayout} style={{ marginTop: 32 }}>
@@ -210,7 +195,7 @@ class SearchForm extends Component {
                 </FormItem>
                 <FormItem label="会议时间">
                 {getFieldDecorator('meetingTime')(
-                    <RangePicker style={{width:210}} />
+                    <RangePicker showTime style={{width:210}} />
                 )}
                 </FormItem>
                 <FormItem label="会议地点">
@@ -381,10 +366,12 @@ state = {
       fieldsValue.regionId = fieldsValue.locationId && fieldsValue.locationId.value
       fieldsValue.regionName= fieldsValue.locationId && fieldsValue.locationId.label
       fieldsValue.locationId = null
+      const {pagination}=this.state
+      pagination.current = 1 
       this.setState({
         searchFormValues: fieldsValue,
-      });
-      this.loadListData(fieldsValue)
+        pagination
+      },()=>{this.loadListData(fieldsValue)});      
     });
   }
 
@@ -405,7 +392,7 @@ state = {
         // meetingTime:{value: searchFormValues.beginTime && [moment(searchFormValues.beginTime),moment(searchFormValues.endTime)]},
         meetingTime:{value: searchFormValues.meetingTime},
           })
-    SearchForm = Form.create({mapPropsToFields})(SearchForm)    
+    SearchForm = Form.create({mapPropsToFields})(SearchForm)
     return (
         <Row gutter={2}>
             <Col md={22} sm={24} >
@@ -418,7 +405,7 @@ state = {
                     <Button type="danger" style={{marginRight:10}}> 批量删除</Button>
                 </Popconfirm>
             }            
-                <Button icon="plus" type="primary" onClick={()=>{this.changeModalView('modalVisible','open','new')}}>新建</Button>
+                <Link to='/index/meetsave'><Button icon="plus" type="primary" >新建</Button></Link>
             </Col>
         </Row>
     );
@@ -434,7 +421,7 @@ state = {
         values.mainImgName = values.mainImgName.file ? values.mainImgName.file.response.data[0].fileName : values.mainImgName
         values.beginTime = rangeTimeValue[0].format('YYYY-MM-DD HH:mm:ss')
         values.endTime = rangeTimeValue[1].format('YYYY-MM-DD HH:mm:ss')
-        values.htmlText = values.htmlText.editorContent
+         
         values.locationId=null
         values.meetingTime=null
         this.save(values)
@@ -565,7 +552,7 @@ state = {
         title: '操作',
         render: (text,record,index) => (
           <div>
-            <a href="javascript:;" onClick={()=>{this.changeModalView('modalVisible','open','edit',()=>{ this.edit(record.id) })}}>修改</a>
+            <Link  to={`/index/meetsave/${record.id}`}>修改</Link>
             <span className="ant-divider" />
             <Popconfirm title="确定要删除吗？" onConfirm={()=>{this.del(record.id)}} okText="是" cancelText="否">
             <a href="javascript:;" >删除</a>
@@ -606,7 +593,7 @@ state = {
             mainImgUrl:{value:detail.mainImgUrl},
             locationId:{value:{value:detail.locationId,label:detail.location}},
             meetingTime:{value:[moment(detail.beginTime),moment(detail.endTime)]},
-            htmlText:{value:{editorContent:detail.htmlText}},
+             htmlText:{value:detail.htmlText},
         } : null
       ) 
     FormBox=Form.create({mapPropsToFields})(FormBox)
@@ -627,7 +614,7 @@ state = {
               scroll={{y:lists.length > config.listLength ? config.scroll.y : null}}
             />
             <Modal
-                title={isEdit ? '修改动态':'新建动态'}
+                title={isEdit ? '修改会议':'新建会议'}
                 visible={modalVisible}
                 width={800}
                 onOk={this.handleAdd}

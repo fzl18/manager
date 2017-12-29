@@ -97,6 +97,7 @@ class SearchSelect extends AutoComplete {
         return (
             <AutoComplete labelInValue style={this.props.style}
                           className={this.props.className}
+                          disabled={this.props.disabled}
                           placeholder={this.props.placeholder}
                           onSearch={this.handleSearch}
                           onSelect={this.handleSelect}

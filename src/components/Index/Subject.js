@@ -1,9 +1,11 @@
 import React, {Component} from 'react';
+import {Link} from 'react-router-dom';
 import $ from '../../common/AjaxRequest';
 import moment from 'moment';
 import API_URL from '../../common/url';
 import { Row, Col, Popconfirm,  Card,Table, Form, Input, Select, Icon, Button, Dropdown, Menu, InputNumber, DatePicker, Modal, message, Upload, notification  } from 'antd';
 import Editor from '../common/Editor';
+import Ueditor from '../../common/Ueditor/Ueditor';
 import {config, uploadser} from '../common/config';
 
 const FormItem = Form.Item;
@@ -383,7 +385,7 @@ class FormBox extends React.Component {
                 {getFieldDecorator('htmlText', {
                   rules: [{validator:this.validateHtml}],
                 })(
-                  <Editor style={{width:460}}/>
+                  <Ueditor/> //<Editor style={{width:460}}/>
                 )}
               </FormItem>              
               {site}
@@ -603,10 +605,12 @@ state = {
       fieldsValue.beginTime = rangeTimeValue && Object.keys(rangeTimeValue).length>0 ? rangeTimeValue[0].format('YYYY-MM-DD') :null
       fieldsValue.endTime = rangeTimeValue && Object.keys(rangeTimeValue).length>0 ? rangeTimeValue[1].format('YYYY-MM-DD') :null
       fieldsValue.subjecgtTime=''
-      this.loadListData(fieldsValue)
+      const {pagination}=this.state
+      pagination.current = 1       
       this.setState({
         searchFormValues: fieldsValue,
-      });
+        pagination
+      },()=>{this.loadListData(fieldsValue)});
     });
   }
 
@@ -639,7 +643,7 @@ state = {
                     <Button type="danger" style={{marginRight:10}}> 批量删除</Button>
                 </Popconfirm>
             }            
-                <Button icon="plus" type="primary" onClick={()=>{this.changeModalView('modalVisible','open','new')}}>新建</Button>
+                <Link to="/index/subject/save"><Button icon="plus" type="primary">新建</Button></Link>
             </Col>
         </Row>
     );
@@ -840,7 +844,7 @@ state = {
         width:100,
         render: (text,record,index) => (
           <div style={{textAlign:'center'}}>
-            <a href="javascript:;" onClick={()=>{this.changeModalView('modalVisible','open','edit',()=>{ this.edit(record.id) })}}>修改</a>
+            <Link to={`/index/subject/save/${record.id}`}>修改</Link>
             <span className="ant-divider" />
             <Popconfirm title="确定要删除吗？" onConfirm={()=>{this.del(record.id)}} okText="是" cancelText="否">
             <a href="javascript:;" >删除</a>
@@ -881,7 +885,7 @@ state = {
             subjectTime:{value:[moment(detail.beginTime),moment(detail.endTime)]},
             clinicalTrailStaging:{value:detail.clinicalTrailStaging ? `${detail.clinicalTrailStaging}` : ''},
             cro:{value:detail.cro},
-            htmlText:{value:{editorContent:detail.htmlText}},
+             htmlText:{value:detail.htmlText},
             interveneMethod:{value:detail.interveneMethod},
             mainImgName:{value:detail.mainImgName},
             mainImgNameUrl:{value:detail.mainImgNameUrl},

@@ -1,11 +1,14 @@
 import React, {Component} from 'react';
+import { Link } from 'react-router-dom';
 import $ from '../../common/AjaxRequest';
 import moment from 'moment';
 import API_URL from '../../common/url';
 import { Row, Col, Popconfirm,  Card,Table, Form, Input, Select, Icon, Button, Dropdown, Menu, InputNumber, DatePicker, Modal, message, Upload, notification  } from 'antd';
-import Editor from '../common/Editor';
+import Editor from '../common/Editor';import Ueditor from '../../common/Ueditor/Ueditor';
 import {config,uploadser} from '../common/config';
 import SortList from '../common/SortList';
+import SearchSelect from '../common/SearchSelect'
+
 
 const FormItem = Form.Item;
 const { Option } = Select;
@@ -18,6 +21,9 @@ class FormBox extends React.Component {
       previewVisible: false,
       previewImage:'',
       fileList:[],
+      sourceData:[],
+      doctorList:[],
+      doctorName:'',
   }
 
   handlePreview = (file) => {
@@ -28,12 +34,15 @@ class FormBox extends React.Component {
     }
   
   handleChange = ({ fileList }) => {
-    console.log(fileList)
-    if(fileList.status=="error" ){
-      message.warn("图片上传出错了，请重试！")
-      fileList = []
+    // console.log(fileList)
+    if(fileList.response){
+      if(fileList.response.error){
+        console.log(fileList.response.error)
+        message.warn("图片上传出错了，请重试！")
+        fileList = []
+      }
+      this.setState({fileList})
     }
-    this.setState({fileList})
   }
 
   delHtmlTag = (str)=>{
@@ -42,7 +51,7 @@ class FormBox extends React.Component {
 
   validateHtml=(rule, value, callback)=>{      
     if(value){
-      let html = this.delHtmlTag(value.editorContent)
+      let html = this.delHtmlTag(value)
       if (html) {
         callback();
         return;
@@ -53,8 +62,13 @@ class FormBox extends React.Component {
   
   componentDidMount(){
     const  { getFieldValue} = this.props.form;
-    const imgUrl= getFieldValue('mainImgUrl')
-    const fileList = getFieldValue('mainImgUrl') ? [{
+    const userCompellation = getFieldValue('userCompellation')
+    this.setState({
+      doctorName:userCompellation || this.state.userCompellation
+    })
+    console.log(userCompellation)
+    const imgUrl= getFieldValue('doctorImgUrl')
+    const fileList = getFieldValue('doctorImgUrl') ? [{
       uid: -1,
       name: 'xxx.png',
       status: 'done',
@@ -66,7 +80,7 @@ class FormBox extends React.Component {
   }
 
   normFile = (rule, value, callback) => {
-    console.log(typeof value)
+    // console.log(typeof value)
     if(typeof value =='string'){
         callback();
         return;
@@ -77,9 +91,40 @@ class FormBox extends React.Component {
     callback('请添加图片');
   }
 
+  handleSelect=(v)=>{    
+    this.state.sourceData.map(data => {
+      if(data.userId == v.key){
+        this.setState({
+          doctorName:data.userCompellation
+        })
+      }
+    })    
+  }
+
+  parserDataDoctor = dt => {
+    if ((dt.data || dt.datas) ) {
+        const sourceData = dt.data ? dt.data : dt.datas
+        // console.log(sourceData)
+        const data = sourceData.map(r => ({
+            text: r.userName+"["+r.userCompellation+"]",
+            value: r.userId,
+        }));
+        this.setState({
+          doctorList:data,
+          sourceData
+        });
+    } else {
+        this.setState({
+          doctorList: [],
+        });
+    }
+  };
+
+
   render(){
-      const { getFieldDecorator, getFieldsValue, setFieldsValue} = this.props.form;
-      const { previewVisible, previewImage, submitting, fileList} = this.state;
+      const { getFieldDecorator, getFieldValue, setFieldsValue} = this.props.form;
+      const { previewVisible, previewImage, submitting, fileList,doctorList,doctorName} = this.state;
+      const userName = getFieldValue('userName') 
       const uploadButton = (
         <div>
           <Icon type="plus" />
@@ -104,27 +149,40 @@ class FormBox extends React.Component {
           sm: { span: 10, offset: 7 },
         },
       };        
+      console.log(doctorName)
       return(
           <div>
           <Form onSubmit={this.props.handleSubmit} style={{ marginTop: 8 }}
           >
             <FormItem
               {...formItemLayout}
-              label="医生姓名"
+              label="医生账号"
             >
-              {getFieldDecorator('lastTendencyTitle', {
+              {getFieldDecorator('userId', {
                 rules: [{
-                  required: true, message: '请输入姓名',
+                  required: true, message: '请选择',
                 }],
               })(
-                <Input placeholder="请输入姓名" />
+                <SearchSelect url={API_URL.usermanager.queryDoctorByHospitalDepartmentId} sourceData={doctorList}
+                  searchParam={{departmentStatus:'INACTIVE'}}
+                  searchKey = 'userMobile'
+                  parserData={this.parserDataDoctor}
+                  handleSelect={this.handleSelect}
+                  disabled = {this.props.disabled}
+                  placeholder={ userName || " 输入手机号码" }/>
               )}
+            </FormItem>
+            <FormItem
+              {...formItemLayout}
+              label="医生姓名"
+            >
+              {doctorName}
             </FormItem>
             <FormItem
               {...formItemLayout}
               label="医生头像"
             >
-              {getFieldDecorator('mainImgName', {
+              {getFieldDecorator('doctorImgName', {
                 rules: [{
                   required: true, message: '请添加图片',
                   validator: this.normFile,
@@ -145,13 +203,16 @@ class FormBox extends React.Component {
               {...formItemLayout}
               label="医生职称"
             >
-              {getFieldDecorator('po', {
+              {getFieldDecorator('doctorPosition', {
                 rules: [{
                   required: true, message: '请选择',
                 }],
               })(
-                <Select>
-                  <Option value='dd'>sddd</Option>
+                <Select placeholder="请选择" allowClear>
+                  <Option value = "主任医师">主任医师</Option>
+                  <Option value = "副主任医师">副主任医师</Option>
+                  <Option value = "主治医师">主治医师</Option>
+                  <Option value = "住院医师">住院医师</Option>
                 </Select>
               )}
             </FormItem>
@@ -159,7 +220,7 @@ class FormBox extends React.Component {
               {...formItemLayout}
               label="擅长"
             >
-              {getFieldDecorator('cs', {
+              {getFieldDecorator('doctorAdept', {
                 rules: [{
                   required: true, message: '请输入擅长',
                 }],
@@ -177,7 +238,7 @@ class FormBox extends React.Component {
                   validator: this.validateHtml,
                 }],
               })(
-                <Editor style={{width:460}}/>
+                <Ueditor/> //<Editor style={{width:460}}/>
               )}
             </FormItem>
             <FormItem {...submitFormLayout} style={{ marginTop: 32 }}>
@@ -201,21 +262,26 @@ class SearchForm extends Component {
         const { getFieldDecorator } = this.props.form;
         return (
             <Form onSubmit={this.props.handleSearch} layout="inline">
+                <FormItem label="医生账号">
+                {getFieldDecorator('userName')(
+                    <Input placeholder="请输入账号" />
+                )}
+                </FormItem>
                 <FormItem label="医生姓名">
-                {getFieldDecorator('name')(
-                    <Input placeholder="请输入医生姓名" />
+                {getFieldDecorator('userCompellation')(
+                    <Input placeholder="请输入姓名" />
                 )}
                 </FormItem>
                 <FormItem label="医生职称">
-                {getFieldDecorator('po')(
-                    <Input placeholder="请输入医生职称" />
+                {getFieldDecorator('doctorPosition')(
+                    <Select placeholder="请选择" style={{width:120}} allowClear>
+                      <Option value = "主任医师">主任医师</Option>
+                      <Option value = "副主任医师">副主任医师</Option>
+                      <Option value = "主治医师">主治医师</Option>
+                      <Option value = "住院医师">住院医师</Option>
+                    </Select>
                 )}
-                </FormItem>
-                <FormItem label="已绑账号">
-                {getFieldDecorator('bind')(
-                    <Input placeholder="请输入已绑账号" />
-                )}
-                </FormItem>
+                </FormItem>                
                 <Button icon="search" type="primary" htmlType="submit" style={{float:'right'}}>查询</Button>
             </Form>
         );
@@ -238,7 +304,8 @@ state = {
     isEdit:false,
     selectedRowKeys: [],
     totalCallNo: 0,
-    sortModalVisible:false
+    sortModalVisible:false,
+    bindModalVisible:false,
   };
 
   loadListData = (params) => {
@@ -248,7 +315,7 @@ state = {
     });
     const options ={
         method: 'POST',
-        url: API_URL.education.queryPopularScienceCategoryList,
+        url: API_URL.index.queryDepartmentDoctor,
         data: {
             offset: 1,
             limit: pagination.pageSize,
@@ -359,10 +426,12 @@ state = {
     e.preventDefault();
     this.searchFormRef.validateFields((err, fieldsValue) => {
       if (err) return;
-      this.loadListData(fieldsValue)
+      const {pagination}=this.state
+      pagination.current = 1      
       this.setState({
         searchFormValues: fieldsValue,
-      });
+        pagination
+      },()=>{this.loadListData(fieldsValue)});
     });
   }
 
@@ -377,8 +446,10 @@ state = {
   renderSearchForm() {
     const { selectedRows, searchFormValues } = this.state;
     const mapPropsToFields = () => ({ 
-            categoryName:{value:searchFormValues.categoryName},
-          })
+      userName:{value:searchFormValues.userName},
+      doctorPosition:{value:searchFormValues.doctorPosition},
+      userCompellation:{value:searchFormValues.userCompellation},
+    })
     SearchForm = Form.create({mapPropsToFields})(SearchForm)    
     return (
         <Row gutter={2}>
@@ -392,7 +463,7 @@ state = {
                     <Button type="danger" style={{marginRight:10}}> 批量删除</Button>
                 </Popconfirm>
             }            
-                <Button icon="plus" type="primary" onClick={()=>{this.changeModalView('modalVisible','open','new')}}>新建</Button>
+                <Link to="/team/doctor/save"><Button icon="plus" type="primary">新建</Button></Link>
                 <Button style={{marginLeft:10}} icon="bar-chart" type="primary" onClick={this.sort}>排序</Button>
             </Col>
         </Row>
@@ -408,10 +479,10 @@ state = {
         const sortList = [];
         listData.map(item => {
             // if (item.moduleDefineName != '录入者'){
-            //     sortList.push({
-            //         key: item.moduleDefineCode,
-            //         name: item.moduleDefineName,
-            //     });
+                sortList.push({
+                    key: item.ydataAccountId,
+                    name: item.userCompellation,
+                });
             // }
         });
         this.sortListRef.show(sortList);
@@ -420,7 +491,12 @@ state = {
   handleSubmit = (e) => {
     e.preventDefault();
     this.formboxref.validateFieldsAndScroll((err, values) => {      
-      if (!err) {             
+      if (!err) {
+         
+        // values.doctorImgName = values.doctorImgName.file ? values.doctorImgName.file.response.data[0].fileName : values.doctorImgName
+        values.doctorImgName = "ddds.png"
+        values.userId = values.userId.key || values.userId
+        console.log(values)
         this.save(values)
       }
     });
@@ -430,9 +506,10 @@ state = {
     const {isEdit,editId}=this.state
     const options ={
         method: 'POST',
-        url: isEdit ? API_URL.education.modifyPopularScienceCategory :  API_URL.education.addPopularScienceCategory,
+        url: isEdit ? API_URL.index.modifyDepartmentDoctor :  API_URL.index.addDepartmentDoctor,
         data: {
             ...params,
+            ydataUuid: isEdit ? editId : null
         },
         dataType: 'json',
         doneResult: data => {
@@ -454,11 +531,11 @@ state = {
   edit=(id)=>{
     const options ={
         method: 'POST',
-        url: API_URL.education.queryPopularScienceCategoryList,
+        url: API_URL.index.queryDepartmentDoctor,
         data: {
             offset: 1,
             limit: 1,
-            lastTendencyId:id,
+            userId:id,
         },
         dataType: 'json',
         doneResult: data => {
@@ -480,11 +557,11 @@ state = {
   del = (id) => {
     const options ={
         method: 'POST',
-        url: API_URL.education.deletePopularScienceCategory,
+        url: API_URL.index.removeDepartmentDoctor,
         data: {
             offset: 1,
             limit: 1,
-            popularScienceCategoryId:id,
+            userId:id,
         },
         dataType: 'json',
         doneResult: data => {
@@ -519,40 +596,42 @@ state = {
     callback && callback()
     }
 
+    handleBindOk =()=>{
 
+    }
   render() {
-    const {loading, listData, detail, selectedRows, addInputValue, isEdit, selectedRowKeys, totalCallNo, modalVisible, sortModalVisible, pagination } = this.state;
+    const {loading, listData, detail, selectedRows, addInputValue, isEdit, selectedRowKeys, totalCallNo, modalVisible, sortModalVisible, pagination,bindModalVisible } = this.state;
     const columns = [
       {
         title: '序号',
         dataIndex: 'index',
       },
       {
+        title: '医生账号',
+        dataIndex: 'userName',
+      },
+      {
         title: '医生姓名',
-        dataIndex: 'Name',
+        dataIndex: 'userCompellation',
       },
       {
         title: '医生职称',
-        dataIndex: 'po',
+        dataIndex: 'doctorPosition',
       },
       {
         title: '擅长',
-        dataIndex: 'sc',
-      },
-      {
-        title: '已绑账号',
-        dataIndex: 'bind',
+        dataIndex: 'doctorAdept',
       },
       {
         title: '操作',
         render: (text,record,index) => (
           <div>
-            {record.isbind ?
-            <a href="javascript:;" onClick={()=>{this.changeModalView('modalVisible','open','edit',()=>{ this.edit(record.id) })}}>绑定账号</a> :
+            {/* {!record.isbind ?
+            <a href="javascript:;" onClick={()=>{this.changeModalView('bindModalVisible','open','edit',()=>{ this.edit(record.id) })}}>绑定账号</a> :
             <a href="javascript:;" onClick={()=>{}} disabled>重新绑定</a>
-            }
-            <span className="ant-divider" />
-            <a href="javascript:;" onClick={()=>{this.changeModalView('modalVisible','open','edit',()=>{ this.edit(record.id) })}}>修改</a>
+            } */}
+            {/* <span className="ant-divider" /> */}
+            <Link to={`/team/doctor/save/${record.id}`}>修改</Link>
             <span className="ant-divider" />
             <Popconfirm title="确定要删除吗？" onConfirm={()=>{this.del(record.id)}} okText="是" cancelText="否">
             <a href="javascript:;" >删除</a>
@@ -566,7 +645,7 @@ state = {
     listData.map((d,i)=>{
         let list = {
             index: ((pagination.current - 1) || 0) * pagination.pageSize + i + 1,
-            id:d.popularScienceCategoryId,
+            id:d.ydataUuid,
             ...d,
         }
         lists.push(list)
@@ -586,7 +665,14 @@ state = {
     const mapPropsToFields = () => (        
       isEdit ?        
         { 
-            categoryName:{value:detail.categoryName},
+            userCompellation:{value:detail.userCompellation},
+            userId:{value:detail.userId},
+            userName:{value:detail.userName},
+            doctorImgName:{value:detail.doctorImgName},
+            doctorImgUrl:{value:detail.doctorImgUrl},
+            doctorPosition:{value:detail.doctorPosition},
+            doctorAdept:{value:detail.doctorAdept},
+             htmlText:{value:detail.htmlText},
         } : null
       ) 
     FormBox=Form.create({mapPropsToFields})(FormBox)
@@ -607,22 +693,58 @@ state = {
               scroll={{y:lists.length > config.listLength ? config.scroll.y : null}}
             />
             <Modal
-                title={isEdit ? '修改动态':'新建动态'}
+                title={isEdit ? '修改医生':'新建医生'}
                 visible={modalVisible}
                 width={800}
                 onOk={this.handleAdd}
                 onCancel={this.changeModalView.bind(this,'modalVisible','close')}
                 footer={null}
             >
-               <FormBox ref={el=>{this.formboxref = el}} closeModalView={this.changeModalView} handleSubmit={this.handleSubmit}/>
+               <FormBox disabled={isEdit} ref={el=>{this.formboxref = el}} closeModalView={this.changeModalView} handleSubmit={this.handleSubmit}/>
             </Modal>
             <SortList ref={el => { this.sortListRef = el; }}
-                            // reload={this.loadData}
-                            sortUrl={API_URL.education.sortPopularScienceCategory}
-                            title={"分类排序"}
+                            reload={this.loadListData}
+                            sortUrl={API_URL.index.sortDepartmentDoctor}
+                            title={"医生排序"}
                             // data={{typeName,}}
                             data={{}}
             />
+            <Modal
+                title={'绑定医生账号'}
+                visible={bindModalVisible}
+                width={500}
+                onOk={this.handleBindOk}
+                onCancel={this.changeModalView.bind(this,'bindModalVisible','close')}
+            >
+              <div style={{padding:'20px 40px'}}>
+               <Row>
+                 <Col span={8} style={{textAlign:'right'}}>选择医生账号：</Col>
+                 <Col span={16}> 
+                  <SearchSelect url='dfew' sourceData={[]} style={{width:'100%'}}
+                    onChange={()=>{}}
+                    placeholder="输入手机号码"
+                    handleSelect={()=>{}}
+                  />
+                 </Col>
+               </Row>
+               <Row>
+                 <Col span={8} style={{textAlign:'right'}}>姓名：</Col>
+                 <Col span={16}></Col>
+               </Row>
+               <Row>
+                 <Col span={8} style={{textAlign:'right'}}>手机号码：</Col>
+                 <Col span={16}></Col>
+               </Row>
+               <Row>
+                 <Col span={8} style={{textAlign:'right'}}>所在医院：</Col>
+                 <Col span={16}></Col>
+               </Row>
+               <Row>
+                 <Col span={8} style={{textAlign:'right'}}>所在科室：</Col>
+                 <Col span={16}></Col>
+               </Row>
+              </div>
+            </Modal>
       </div>
     );
   }

@@ -11,10 +11,86 @@ const getValue = obj => Object.keys(obj).map(key => obj[key]).join(',');
 const dayFormat = 'YYYY-MM-DD'
 
 class FormBox extends React.Component {
+  state ={
+    hospital:[],
+    hospitalId:'',
+    department:[],
+    departmentId:'',
+  }
+  loadHospital = (params={})=>{
+    const {assistants}=this.state
+    const options ={
+        method: 'POST',
+        url: API_URL.common.queryHospital,
+        data: {
+            ...params,
+        },
+        dataType: 'json',
+        doneResult: data => {
+            if (!data.error) {
+                this.setState({
+                  hospital:data.hospital.data || data.hospital.datas
+                })
+            } else {
+                Modal.error({ title: data.error});
+            }            
+        }
+    }
+    $.sendRequest(options)
+  }
+
+  loadDepartment =(params={})=>{
+    const {assistants}=this.state
+    const options ={
+        method: 'POST',
+        url: API_URL.common.listHospitalDepartment,
+        data: {
+            ...params,
+        },
+        dataType: 'json',
+        doneResult: data => {
+            if (!data.error) {
+                  this.setState({
+                    department:data.department.data || data.department.datas
+                  })
+            } else {
+                Modal.error({ title: data.error});
+            }            
+        }
+    }
+    $.sendRequest(options)
+  }
+
+  handleSelectChange=(name,v)=>{
+    const {hospitalId}=this.state
+    if(name==='hospitalId'){
+      this.loadDepartment({'hospitalId':v})
+      if(hospitalId !== v){
+        this.setState({
+          departmentId : ''
+        })
+      }      
+    } 
+    this.setState({
+      [name]:v,
+    })
+  }
+
+  componentDidMount(){
+    const {getFieldDecorator,getFieldValue}=this.props.form
+    const departmentId = getFieldValue('departmentId')
+    this.loadHospital()
+    if(departmentId && departmentId !='undefined' && departmentId !='null' ){
+      this.loadDepartment({'hospitalId':departmentId})
+    }
+  }
 
   render(){
       const {getFieldDecorator,getFieldValue}=this.props.form
       const {assistants} = this.props
+      const {hospital,department,departmentId}=this.state
+      const hospitalName = getFieldValue('hospitalName') || ''
+      const departmentName = getFieldValue('departmentName') || ''
       const formItemLayout = {
         labelCol: {
           xs: { span: 24 },
@@ -67,13 +143,13 @@ class FormBox extends React.Component {
               {...formItemLayout}
               label={assistants ? "单位":"医院"}
             >
-              {getFieldDecorator('hospitalName', {
+              {getFieldDecorator('hospitalId', {
                 rules: [{
-                  required: true, message: '请选择',
+                  required: false, message: '请选择',
                 }],
               })(
-                <Select placeholder="请选择" >
-                  <Option key="1">xxx</Option>
+                <Select placeholder="请选择" onChange={this.handleSelectChange.bind(this,'hospitalId')}>
+                  {hospital.length >0 ? hospital.map(v=><Option value={`${v.hospitalId}`}>{v.hospitalName}</Option> ):null}
                 </Select>
               )}
             </FormItem>
@@ -81,13 +157,14 @@ class FormBox extends React.Component {
               {...formItemLayout}
               label={assistants ? "部门" : "科室"}
             >
-              {getFieldDecorator('departmentName', {
+              {getFieldDecorator('departmentId', {
                 rules: [{
-                  required: true, message: '请选择',
+                  required: false, message: '请选择',
                 }],
               })(
-                <Select placeholder="请选择" >
-                  <Option key="1">xxx</Option>
+                <Select placeholder="请选择" onChange={this.handleSelectChange.bind(this,'departmentId')}>
+                  { department.length >0 ?
+                    department.map(v=><Option value={`${v.departmentId}`}>{v.departmentName}</Option> ) : null}
                 </Select>
               )}
             </FormItem>
@@ -121,7 +198,7 @@ class SearchForm extends Component {
                 )}
                 </FormItem>
                 <FormItem label="绑定状态">
-                {getFieldDecorator('status')(
+                {getFieldDecorator('bindStatus')(
                     <Select allowClear style={{width:120}}>
                         <Option value="ACTIVE">已绑定</Option>
                         <Option value="INACTIVE">已解绑</Option>
@@ -288,10 +365,12 @@ state = {
     e.preventDefault();
     this.searchFormRef.validateFields((err, fieldsValue) => {
       if (err) return;
-      this.loadListData(fieldsValue)
+      const {pagination}=this.state
+      pagination.current = 1      
       this.setState({
         searchFormValues: fieldsValue,
-      });
+        pagination
+      },()=>{this.loadListData(fieldsValue)});
     });
   }
 
@@ -394,6 +473,30 @@ state = {
     $.sendRequest(options)
   }
 
+
+  resetUserPassword=(id)=>{
+    const options ={
+      method: 'POST',
+      url: API_URL.usermanager.resetUserPassword,
+      data: {
+          userId:id,
+      },
+      dataType: 'json',
+      doneResult: data => {
+          if (!data.error) {
+              notification['success']({
+                  message: '重置密码成功！',
+                  description: `初始密码为：${data.password}`,
+                })
+              this.loadListData()
+          } else {
+              Modal.error({ title: data.error });
+          }            
+      }
+  }
+  $.sendRequest(options)
+}
+
   changeModalView = (modalName,isShow,type,callback) => {    
     this.setState({
       [modalName]: isShow==='open' ? true : isShow==='close' ? false : false,
@@ -416,7 +519,7 @@ state = {
     const mapPropsToFields = () => ({ 
             userCompellation:{value:searchFormValues.userCompellation},
             userMobile:{value:searchFormValues.userMobile},
-            status:{value:searchFormValues.status},
+            bindStatus:{value:searchFormValues.bindStatus},
           })
     SearchForm = Form.create({mapPropsToFields})(SearchForm)    
     return (
@@ -488,10 +591,10 @@ state = {
       },
       {
         title: '绑定状态',
-        dataIndex: 'status',
+        dataIndex: 'bindStatus',
         width:80,
         render:(text,react)=>
-        react.status =='NOACTIVE' ? "未绑定过": react.status == "INACTIVE" ? "已解绑" : react.status == "ACTIVE" ? "已绑定" : "未知"
+        react.bindStatus =='NOACTIVE' ? "未绑定过": react.bindStatus == "INACTIVE" ? "已解绑" : react.bindStatus == "ACTIVE" ? "已绑定" : "未绑定过"
       },
       {
         title: '最近一次绑定时间',
@@ -501,9 +604,13 @@ state = {
       },
       {
         title: '操作',
-        width:100,
+        width:130,
         render: (text,record,index) => (
           <div style={{textAlign:'center'}}>
+            <Popconfirm title="确定要重置密码吗？" onConfirm={()=>{this.resetUserPassword(record.id)}} okText="是" cancelText="否">
+            <a href="javascript:;">重置密码</a>
+            </Popconfirm>
+            <span className="ant-divider" />
             <a href="javascript:;" onClick={()=>{this.changeModalView('modalVisible','open','edit',()=>{ this.edit(record.id) })}}>修改</a>
             <span className="ant-divider" />
             <Popconfirm title="确定要删除吗？" onConfirm={()=>{this.del(record.id)}} okText="是" cancelText="否">
@@ -518,6 +625,7 @@ state = {
     listData.map((d,i)=>{
         let list = {
             index: ((pagination.current - 1) || 0) * pagination.pageSize + i + 1,
+            uuid:i,
             id:d.userId,
             ...d,
         }
@@ -539,6 +647,10 @@ state = {
         { 
             userMobile:{value:detail.userMobile},
             userCompellation:{value:detail.userCompellation},
+            hospitalId:{value:detail.hospitalId ? `${detail.hospitalId}`:''},
+            hospitalName:{value:detail.hospitalName},
+            departmentId:{value: detail.departmentId ? `${detail.departmentId}` :''},
+            departmentName:{value:detail.departmentName},
         } : null
       ) 
     FormBox=Form.create({mapPropsToFields})(FormBox)
@@ -555,7 +667,7 @@ state = {
             </div>
             <Table
               loading={loading}
-              rowKey={record => record.id}
+              rowKey={record => record.uuid}
             //   rowSelection={rowSelection}
               onSelectRow={this.handleSelectRows}
               dataSource={lists}

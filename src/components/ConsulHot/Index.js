@@ -42,7 +42,7 @@ class FormBox extends React.Component {
 
     validateHtml=(rule, value, callback)=>{      
       if(value){
-        let html = this.delHtmlTag(value.editorContent)
+        let html = this.delHtmlTag(value)
         if (html) {
           callback();
           return;
@@ -163,7 +163,7 @@ class FormBox extends React.Component {
                     validator: this.validateHtml,
                   }],
                 })(
-                  <Editor style={{width:460}}/>
+                  <Ueditor/> //<Editor style={{width:460}}/>
                 )}
               </FormItem>
               <FormItem {...submitFormLayout} style={{ marginTop: 32 }}>
@@ -188,35 +188,35 @@ class SearchForm extends Component {
         return (
             <Form onSubmit={this.props.handleSearch} layout="inline">
                 <FormItem label="问题概要">
-                {getFieldDecorator('gy')(
+                {getFieldDecorator('msg')(
                     <Input placeholder="" />
                 )}
                 </FormItem>
                 <FormItem label="提问者">
-                {getFieldDecorator('user')(
+                {getFieldDecorator('quizzers')(
                     <Input placeholder="" style={{width:100}}/>
                 )}
                 </FormItem>
                 <FormItem label="咨询对象">
-                {getFieldDecorator('ob')(
+                {getFieldDecorator('counselors')(
                     <Input placeholder="" style={{width:100}}/>
                 )}
                 </FormItem>
                 <FormItem label="协助解答者">
-                {getFieldDecorator('jd')(
+                {getFieldDecorator('solvers')(
                     <Input placeholder="" style={{width:100}}/>
                 )}
                 </FormItem>
                 <FormItem label="来源">
-                {getFieldDecorator('hot')(
+                {getFieldDecorator('source')(
                     <Select style={{width:80}} allowClear >
-                      <Option value='1'>历史咨询</Option>
-                      <Option value='0'>自定义</Option>
+                      <Option value='历史咨询'>历史咨询</Option>
+                      <Option value='自定义'>自定义</Option>
                     </Select>
                 )}
                 </FormItem>
                 <FormItem label="是否置顶">
-                {getFieldDecorator('hot')(
+                {getFieldDecorator('isTop')(
                     <Select style={{width:80}} allowClear >
                       <Option value='1'>是</Option>
                       <Option value='0'>否</Option>
@@ -254,7 +254,7 @@ state = {
     });
     const options ={
         method: 'POST',
-        url: API_URL.index.queryLastTendencyList,
+        url: API_URL.consul.queryHotConversation,
         data: {
             offset: 1,
             limit: pagination.pageSize,
@@ -364,11 +364,13 @@ state = {
   handleSearch = (e) => {
     e.preventDefault();
     this.searchFormRef.validateFields((err, fieldsValue) => {
-      if (err) return;      
-      this.loadListData(fieldsValue)
+      if (err) return;
+      const {pagination}=this.state
+      pagination.current = 1      
       this.setState({
         searchFormValues: fieldsValue,
-      });
+        pagination
+      },()=>{this.loadListData(fieldsValue)});
     });
   }
 
@@ -383,11 +385,11 @@ state = {
   renderSearchForm() {
     const { selectedRows, searchFormValues } = this.state;
     const mapPropsToFields = () => ({ 
-            lastTendencyTitle:{value:searchFormValues.lastTendencyTitle},
-            lastTendencyTitle:{value:searchFormValues.lastTendencyTitle},
-            lastTendencyTitle:{value:searchFormValues.lastTendencyTitle},
-            lastTendencyTitle:{value:searchFormValues.lastTendencyTitle},
-            lastTendencyTitle:{value:searchFormValues.lastTendencyTitle},
+            source:{value:searchFormValues.source},
+            isTop:{value:searchFormValues.isTop},
+            counselors:{value:searchFormValues.counselors},
+            quizzers:{value:searchFormValues.quizzers},
+            solvers:{value:searchFormValues.solvers},
           })
     SearchForm = Form.create({mapPropsToFields})(SearchForm)    
     return (
@@ -418,7 +420,7 @@ state = {
         console.log(values)
         values.publishDay = moment(values.publishDay).format(dayFormat)
         values.mainImgName = values.mainImgName.file ? values.mainImgName.file.response.data[0].fileName : values.mainImgName
-        values.htmlText = values.htmlText.editorContent
+         
         this.save(values)
       }
     });
@@ -431,7 +433,7 @@ state = {
         url: isEdit ? API_URL.index.modifyLastTendency :  API_URL.index.addLastTendency,
         data: {
             ...params,
-            lastTendencyId:isEdit ? editId : null,
+            conversationId:isEdit ? editId : null,
         },
         dataType: 'json',
         doneResult: data => {
@@ -457,7 +459,7 @@ state = {
         data: {
             offset: 1,
             limit: 1,
-            lastTendencyId:id,
+            conversationId:id,
         },
         dataType: 'json',
         doneResult: data => {
@@ -479,11 +481,11 @@ state = {
   del = (id) => {
     const options ={
         method: 'POST',
-        url: API_URL.index.deleteLastTendency,
+        url: API_URL.consul.removeHotConversation,
         data: {
             offset: 1,
             limit: 1,
-            lastTendencyId:id,
+            hotConversationId:id,
         },
         dataType: 'json',
         doneResult: data => {
@@ -501,12 +503,28 @@ state = {
     $.sendRequest(options)
   }
 
-  settop=(k)=>{
-    if(k){
-
-    }else{
-
-    }
+  settop=(id,k)=>{
+    const options ={
+      method: 'POST',
+      url: API_URL.consul.topHotConversation,
+      data: {
+          hotConversationId:id,
+          isTop:k,
+      },
+      dataType: 'json',
+      doneResult: data => {
+          if (!data.error) {
+              notification['success']({
+                  message: data.success,
+                  description: '',
+                })
+              this.loadListData()
+          } else {
+              Modal.error({ title: data.error });
+          }            
+      }
+  }
+  $.sendRequest(options)
   }
 
   changeModalView = (modalName,isShow,type,callback) => {    
@@ -537,57 +555,59 @@ state = {
       },
       {
         title: '问题概要',
-        dataIndex: 'lastTendencyTitle',
-        width:500,
+        dataIndex: 'msg',
+        width:400,
         render:(text,record)=>{
           return(
-            <Link to={`/consulhistory/detail/${record.id}`}>{record.lastTendencyTitle}</Link>
+            <Link to={`/consulhot/detail/${record.id}`}>{record.msg}</Link>
           )
         }
       },
       {
         title: '来源',
-        dataIndex: 'ly',
+        dataIndex: 'source',
         sorter:true,
         width:100
       }, 
       {
         title: '提问者',
-        dataIndex: 'tw',
-        width:100
+        dataIndex: 'quizzers',
+        width:100,
+        render:(text,record)=> record.quizzers || '默认' 
       },      
       {
         title: '咨询对象',
-        dataIndex: 'ob', 
+        dataIndex: 'counselors', 
         width:100,       
       },
       {
         title: '协助解答者',
-        dataIndex: 'jd',
+        dataIndex: 'solvers',
         width:200
       },
       {
         title: '设为热门时间',
-        dataIndex: 'createTimeString',
+        dataIndex: 'hotTime',
         sorter: true,
         width:150,
         render: (text,record,index) => (
-          moment(record.publishDay).format("YY.MM.DD")
+          moment(record.hotTime).format("YY.MM.DD HH:mm:ss")
         )
       },      
       {
         title: '是否置顶',
-        dataIndex: 'hot',
+        dataIndex: 'isTop',
         sorter: true,
-        width:120
+        width:100,
+        render:(text,record)=> record.isTop ? '是':'否'
       },
       {
         title: '最新置顶时间',
-        dataIndex: 'createTime',
+        dataIndex: 'topTime',
         sorter: true,
-        width:150,
+        width:160,
         render: (text,record,index) => (
-          moment(record.publishDay).format("YY.MM.DD HH:mm")
+          moment(record.topTime).format("YY.MM.DD HH:mm:ss")
         )
       },
       {
@@ -595,20 +615,20 @@ state = {
         width:150,
         render: (text,record,index) => (
           <div style={{textAlign:'center'}}>
-            { !record.top &&
+            { record.source !== "咨询历史" &&
             <div style={{textAlign:'center'}}>                
-                <Link to={`/index/news/save/${record.id}`}>修改</Link>
+                <Link to={`/consulhot/diy/${record.id}`}>修改</Link>
                     <span className="ant-divider" />
-                <Popconfirm title="确定要删除吗？" onConfirm={()=>{this.del(record.id)}} okText="是" cancelText="否">
+                <Popconfirm title="确定要删除吗？" onConfirm={()=>{this.del(record.hotConversationId)}} okText="是" cancelText="否">
                 <a href="javascript:;" >删除</a>
                 </Popconfirm>
             </div>
             }
-            { record.top ?                       
-            <Popconfirm title="确定要置顶吗？" onConfirm={()=>{this.settop(1)}} okText="是" cancelText="否">
+            { !record.isTop ?                       
+            <Popconfirm title="确定要置顶吗？" onConfirm={()=>{this.settop(record.hotConversationId,1)}} okText="是" cancelText="否">
                 <a href="javascript:;" >置顶</a>
             </Popconfirm> :
-            <Popconfirm title="确定要取消置顶吗？" onConfirm={()=>{this.settop(0)}} okText="是" cancelText="否">
+            <Popconfirm title="确定要取消置顶吗？" onConfirm={()=>{this.settop(record.hotConversationId,0)}} okText="是" cancelText="否">
                 <a href="javascript:;" >取消置顶</a>
             </Popconfirm>            
             }            
@@ -622,7 +642,7 @@ state = {
     listData.map((d,i)=>{
         let list = {
             index: ((pagination.current - 1) || 0) * pagination.pageSize + i + 1,
-            id:d.lastTendencyId,
+            id:d.conversationId,
             ...d,
         }
         lists.push(list)
@@ -645,7 +665,7 @@ state = {
             mainImgName:{value:detail.mainImgName},
             mainImgUrl:{value:detail.mainImgUrl},
             publishDay:{value:moment(detail.publishDay)},
-            htmlText:{value:{editorContent:detail.htmlText}},
+             htmlText:{value:detail.htmlText},
         } : null
       ) 
     FormBox=Form.create({mapPropsToFields})(FormBox)
@@ -656,7 +676,7 @@ state = {
             </div>
             <Table
               loading={loading}
-              rowKey={record => record.id}
+              rowKey={record => record.hotConversationId}
             //   rowSelection={rowSelection}
               onSelectRow={this.handleSelectRows}
               dataSource={lists}

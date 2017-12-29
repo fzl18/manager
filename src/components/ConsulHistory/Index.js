@@ -42,7 +42,7 @@ class FormBox extends React.Component {
 
     validateHtml=(rule, value, callback)=>{      
       if(value){
-        let html = this.delHtmlTag(value.editorContent)
+        let html = this.delHtmlTag(value)
         if (html) {
           callback();
           return;
@@ -163,7 +163,7 @@ class FormBox extends React.Component {
                     validator: this.validateHtml,
                   }],
                 })(
-                  <Editor style={{width:460}}/>
+                  <Ueditor/> //<Editor style={{width:460}}/>
                 )}
               </FormItem>
               <FormItem {...submitFormLayout} style={{ marginTop: 32 }}>
@@ -188,27 +188,27 @@ class SearchForm extends Component {
         return (
             <Form onSubmit={this.props.handleSearch} layout="inline">
                 <FormItem label="问题概要">
-                {getFieldDecorator('gy')(
+                {getFieldDecorator('msg')(
                     <Input placeholder="" />
                 )}
                 </FormItem>
                 <FormItem label="提问者">
-                {getFieldDecorator('user')(
+                {getFieldDecorator('quizzers')(
                     <Input placeholder="" style={{width:100}}/>
                 )}
                 </FormItem>
                 <FormItem label="咨询对象">
-                {getFieldDecorator('ob')(
+                {getFieldDecorator('counselors')(
                     <Input placeholder="" style={{width:100}}/>
                 )}
                 </FormItem>
                 <FormItem label="协助解答者">
-                {getFieldDecorator('jd')(
+                {getFieldDecorator('solvers')(
                     <Input placeholder="" style={{width:100}}/>
                 )}
                 </FormItem>
                 <FormItem label="是否设为热门">
-                {getFieldDecorator('hot')(
+                {getFieldDecorator('isHot')(
                     <Select style={{width:80}} allowClear >
                       <Option value='1'>是</Option>
                       <Option value='0'>否</Option>
@@ -246,7 +246,7 @@ state = {
     });
     const options ={
         method: 'POST',
-        url: API_URL.index.queryLastTendencyList,
+        url: API_URL.consul.queryConversation,
         data: {
             offset: 1,
             limit: pagination.pageSize,
@@ -356,11 +356,13 @@ state = {
   handleSearch = (e) => {
     e.preventDefault();
     this.searchFormRef.validateFields((err, fieldsValue) => {
-      if (err) return;      
-      this.loadListData(fieldsValue)
+      if (err) return;
+      const {pagination}=this.state
+      pagination.current = 1      
       this.setState({
         searchFormValues: fieldsValue,
-      });
+        pagination
+      },()=>{this.loadListData(fieldsValue)});
     });
   }
 
@@ -375,11 +377,11 @@ state = {
   renderSearchForm() {
     const { selectedRows, searchFormValues } = this.state;
     const mapPropsToFields = () => ({ 
-            lastTendencyTitle:{value:searchFormValues.lastTendencyTitle},
-            lastTendencyTitle:{value:searchFormValues.lastTendencyTitle},
-            lastTendencyTitle:{value:searchFormValues.lastTendencyTitle},
-            lastTendencyTitle:{value:searchFormValues.lastTendencyTitle},
-            lastTendencyTitle:{value:searchFormValues.lastTendencyTitle},
+            msg:{value:searchFormValues.msg},
+            quizzers:{value:searchFormValues.quizzers},
+            counselors:{value:searchFormValues.counselors},
+            solvers:{value:searchFormValues.solvers},
+            isHot:{value:searchFormValues.isHot},
           })
     SearchForm = Form.create({mapPropsToFields})(SearchForm)    
     return (
@@ -409,7 +411,7 @@ state = {
         console.log(values)
         values.publishDay = moment(values.publishDay).format(dayFormat)
         values.mainImgName = values.mainImgName.file ? values.mainImgName.file.response.data[0].fileName : values.mainImgName
-        values.htmlText = values.htmlText.editorContent
+         
         this.save(values)
       }
     });
@@ -520,22 +522,22 @@ state = {
       },
       {
         title: '问题概要',
-        dataIndex: 'lastTendencyTitle',
+        dataIndex: 'msg',
         width:500,
         render:(text,record)=>{
           return(
-            <Link to={`/consulhistory/detail/${record.id}`}>{record.lastTendencyTitle}</Link>
+            <Link to={`/consulhistory/detail/${record.id}`}>{record.msg}</Link>
           )
         }
       },
       {
         title: '提问者',
-        dataIndex: 'tw',
+        dataIndex: 'quizzers',
         width:100
       },      
       {
         title: '咨询对象',
-        dataIndex: 'ob', 
+        dataIndex: 'counselors', 
         width:100,       
       },
       {
@@ -544,19 +546,20 @@ state = {
         sorter: true,
         width:150,
         render: (text,record,index) => (
-          moment(record.publishDay).format("YY.MM.DD")
+          moment(record.publishDay).format("YY-MM-DD")
         )
       },
       {
         title: '协助解答者',
-        dataIndex: 'jd',
+        dataIndex: 'solvers',
         width:200
       },
       {
         title: '是否设为热门',
-        dataIndex: 'hot',
+        dataIndex: 'isHot',
         sorter: true,
-        width:120
+        width:120,
+        render:(text,record)=> (record.isHot ? "是":"否")
       },
       // {
       //   title: '操作',
@@ -577,7 +580,7 @@ state = {
     listData.map((d,i)=>{
         let list = {
             index: ((pagination.current - 1) || 0) * pagination.pageSize + i + 1,
-            id:d.lastTendencyId,
+            id:d.conversationId,
             ...d,
         }
         lists.push(list)
@@ -600,7 +603,7 @@ state = {
             mainImgName:{value:detail.mainImgName},
             mainImgUrl:{value:detail.mainImgUrl},
             publishDay:{value:moment(detail.publishDay)},
-            htmlText:{value:{editorContent:detail.htmlText}},
+             htmlText:{value:detail.htmlText},
         } : null
       ) 
     FormBox=Form.create({mapPropsToFields})(FormBox)

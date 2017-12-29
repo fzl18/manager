@@ -1,10 +1,12 @@
 import React, {Component} from 'react';
+import {Link} from 'react-router-dom';
 import $ from '../../common/AjaxRequest';
 import moment from 'moment';
 import API_URL from '../../common/url';
 import { Row, Col, Popconfirm,  Card,Table, Form, Input, Select, Icon, Button, Dropdown, Menu, InputNumber, DatePicker, Modal, message, Upload, notification  } from 'antd';
-import Editor from '../common/Editor';
+import Editor from '../common/Editor';import Ueditor from '../../common/Ueditor/Ueditor';
 import {config,uploadser} from '../common/config';
+import './style.less'
 
 const FormItem = Form.Item;
 const { Option } = Select;
@@ -40,7 +42,7 @@ class FormBox extends React.Component {
 
     validateHtml=(rule, value, callback)=>{      
       if(value){
-        let html = this.delHtmlTag(value.editorContent)
+        let html = this.delHtmlTag(value)
         if (html) {
           callback();
           return;
@@ -50,27 +52,27 @@ class FormBox extends React.Component {
     }
 
     remove = (k) => {
+      console.log(k)
       const { form } = this.props;
-      // can use data-binding to get
       const keys = form.getFieldValue('keys');
-      // We need at least one passenger
       if (keys.length === 1) {
         return;
       }  
-      // can use data-binding to set
       form.setFieldsValue({
         keys: keys.filter(key => key !== k),
       });
+      console.log(keys.filter(key => key !== k))
     }
 
-    add = () => {
-      uuid++;
+    add = () => {      
       const { form } = this.props;
-      const questionStoreKeywordList = form.getFieldValue('questionStoreKeywordList');
-      const nextKeys = questionStoreKeywordList.concat(uuid);
+      const keys = form.getFieldValue('keys');
+      const nextKeys = keys.concat(uuid);
+      uuid++;
       form.setFieldsValue({
-        questionStoreKeywordList: nextKeys,
+        keys: nextKeys,
       });
+      // console.log(nextKeys)
     }
     
     componentDidMount(){
@@ -80,12 +82,6 @@ class FormBox extends React.Component {
     render(){
         const { getFieldDecorator, getFieldValue, setFieldsValue} = this.props.form;
         const { previewVisible, previewImage, submitting, fileList} = this.state;        
-        const uploadButton = (
-          <div>
-            <Icon type="plus" />
-            <div className="ant-upload-text">上传图片</div>
-          </div>
-        );
         const formItemLayout = {
           labelCol: {
             xs: { span: 24 },
@@ -104,37 +100,37 @@ class FormBox extends React.Component {
             sm: { span: 10, offset: 7 },
           },
         };
-        const key = getFieldValue('questionStoreKeywordList') || []        
-        const formItems = key.map((k, index) => {
-          return (
-            <span style={{marginRight:3,display:'inline-block',width:120}}>
+        const questionStoreKeywordList = getFieldValue('questionStoreKeywordList') || []
+        const key = []
+        questionStoreKeywordList.map((v,i)=>key.push(i))
+        getFieldDecorator("keys",{initialValue:[]})
+        const keys = getFieldValue('keys');
+        const formItems = keys.map((k, index) => {
+          return (            
             <FormItem              
               required={false}
               key={k}
             >
               {getFieldDecorator(`key[${k}]`, {
-                initialValue:k,
+                // initialValue:questionStoreKeywordList[index],
                 validateTrigger: ['onChange', 'onBlur'],
                 rules: [{
                   required: true,
                   whitespace: true,
                   message: "请输入关键字",
                 }],
-              })(
-                <span style={{display:'inline-block'}}>
-                  <Input style={{width:90,background:'#eee',marginBottom:10}} size='large'/>
-                  {keys.length > 1 ? (
-                    <i
-                      className="iconfont icon-cha"
-                      style={{color:'blue',fontSize:22,position: 'relative',top:-8,right:16,cursor:'pointer'}}
-                      disabled={keys.length === 1}
-                      onClick={() => this.remove(k)}
-                    />
-                  ) : null }
-                </span>
-              )}              
+              })(                
+                  <Input style={{width:90,background:'#eee',marginBottom:10}} size='large'/>                  
+              )}
+              {keys.length > 1 ? (
+                  <i
+                    className="iconfont icon-cha"
+                    style={{color:'blue',fontSize:22,position: 'relative',top:-8,right:16,cursor:'pointer'}}
+                    disabled={keys.length === 1}
+                    onClick={() => this.remove(k)}
+                  />
+                ) : null }
             </FormItem>
-            </span>
           );
         });
         return(
@@ -171,7 +167,7 @@ class FormBox extends React.Component {
                 {...submitFormLayout}
                 label=""
               >
-                <div style={{width:'154%'}}>{formItems}</div>
+                <div id="item" style={{width:'154%',display:'flex',flexWrap:'wrap'}}>{formItems}</div>
               </FormItem>              
               <FormItem
                 {...formItemLayout}
@@ -183,7 +179,7 @@ class FormBox extends React.Component {
                     validator: this.validateHtml,
                   }],
                 })(
-                  <Editor style={{width:460}}/>
+                  <Ueditor/> //<Editor style={{width:460}}/>
                 )}
               </FormItem>
               <FormItem {...submitFormLayout} style={{ marginTop: 32 }}>
@@ -359,10 +355,12 @@ state = {
     e.preventDefault();
     this.searchFormRef.validateFields((err, fieldsValue) => {
       if (err) return;
-      this.loadListData(fieldsValue)
+      const {pagination}=this.state
+      pagination.current = 1      
       this.setState({
         searchFormValues: fieldsValue,
-      });
+        pagination
+      },()=>{this.loadListData(fieldsValue)});
     });
   }
 
@@ -393,7 +391,7 @@ state = {
                     <Button type="danger" style={{marginRight:10}}> 批量删除</Button>
                 </Popconfirm>
             }            
-                <Button icon="plus" type="primary" onClick={()=>{this.changeModalView('modalVisible','open','new')}}>新建</Button>
+                <Link to={`/question/save`}><Button icon="plus" type="primary">新建</Button></Link>
             </Col>
         </Row>
     );
@@ -506,13 +504,6 @@ state = {
     callback && callback()
     }
     
-    getKeywods=(list)=>{
-      let string='';
-      list.map(d=>{
-        string+=d.keyword+";"
-      });
-      return string;
-    }
 
 
 
@@ -541,7 +532,7 @@ state = {
         title: '操作',
         render: (text,record,index) => (
           <div>
-            <a href="javascript:;" onClick={()=>{this.changeModalView('modalVisible','open','edit',()=>{ this.edit(record.id) })}}>修改</a>
+            <Link to={`/question/save/${record.id}`}>修改</Link>
             <span className="ant-divider" />
             <Popconfirm title="确定要删除吗？" onConfirm={()=>{this.del(record.id)}} okText="是" cancelText="否">
             <a href="javascript:;" >删除</a>
@@ -556,7 +547,7 @@ state = {
         let list = {
             index: ((pagination.current - 1) || 0) * pagination.pageSize + i + 1,
             id:d.questionStoreId,
-            keywords:this.getKeywods(d.questionStoreKeywordList),
+            keywords:d.questionStoreKeywordList.map( d=> `${d.keyword} ; ` )  ,
             ...d,
         }
         lists.push(list)

@@ -3,8 +3,7 @@ import $ from '../../common/AjaxRequest';
 import moment from 'moment';
 import API_URL from '../../common/url';
 import { Row, Col, Popconfirm,  Card,Table, Form, Input, Select, Icon, Button, Dropdown, Menu, InputNumber, DatePicker, Modal, message, Upload, notification  } from 'antd';
-import Editor from '../common/Editor';
-import Ueditor from '../../common/Ueditor/Ueditor';
+import Editor from '../common/Editor';import Ueditor from '../../common/Ueditor/Ueditor';
 import {config,uploadser} from '../common/config';
 
 const FormItem = Form.Item;
@@ -18,7 +17,36 @@ class FormBox extends React.Component {
         previewVisible: false,
         previewImage:'',
         fileList:[],
+        listData:[],
     }
+
+    loadClass=(params)=>{
+      const options ={
+        method: 'POST',
+        url: API_URL.education.queryPopularScienceCategoryList,
+        data: {
+            offset: 1,
+            limit: 999,
+            ...params,
+        },
+        dataType: 'json',
+        doneResult: data => {
+            if (!data.error) {
+                const listData = data.datas || data.data;
+                this.setState({
+                    loading: false,
+                    listData,
+                });
+                console.log(listData)
+            } else {
+                Modal.error({ title: data.error });
+            }
+            this.setState({loading:false})
+        }
+    }
+    $.sendRequest(options)
+    }
+
 
     handlePreview = (file) => {
         this.setState({
@@ -28,8 +56,7 @@ class FormBox extends React.Component {
       }
     
     handleChange = ({ fileList }) => {
-      console.log(fileList)
-      if(fileList.status=="error" ){
+      if(fileList.status=="error"){
         message.warn("图片上传出错了，请重试！")
         fileList = []
       }
@@ -40,7 +67,7 @@ class FormBox extends React.Component {
       return str.replace(/<[^>]+>/g,"");
     }
 
-    validateHtml=(rule, value, callback)=>{
+    validateHtml=(rule, value, callback)=>{      
       if(value){
         let html = this.delHtmlTag(value)
         if (html) {
@@ -63,6 +90,7 @@ class FormBox extends React.Component {
       this.setState({
         fileList
       })
+      this.loadClass()
     }
 
     normFile = (rule, value, callback) => {
@@ -78,8 +106,8 @@ class FormBox extends React.Component {
     }
 
     render(){
-        const { getFieldDecorator, getFieldValue,getFieldsValue, setFieldsValue} = this.props.form;
-        const { previewVisible, previewImage, submitting, fileList} = this.state;
+        const { getFieldDecorator, getFieldsValue, setFieldsValue} = this.props.form;
+        const { previewVisible, previewImage, submitting, fileList, listData} = this.state;
         const uploadButton = (
           <div>
             <Icon type="plus" />
@@ -93,9 +121,9 @@ class FormBox extends React.Component {
             >
               <FormItem
                 {...formItemLayout}
-                label="动态标题"
+                label="文章标题"
               >
-                {getFieldDecorator('lastTendencyTitle', {
+                {getFieldDecorator('popularScienceTitle', {
                   rules: [{
                     required: true, message: '请输入标题',
                   }],
@@ -105,7 +133,7 @@ class FormBox extends React.Component {
               </FormItem>
               <FormItem
                 {...formItemLayout}
-                label="动态主图"
+                label="文章主图"
               >
                 {getFieldDecorator('mainImgName', {
                   rules: [{
@@ -126,9 +154,23 @@ class FormBox extends React.Component {
               </FormItem>
               <FormItem
                 {...formItemLayout}
+                label="文章分类"
+              >
+                {getFieldDecorator('popularScienceCategoryId', {
+                  rules: [{
+                    required: true, message: '请选择文章分类',
+                  }],
+                })(
+                    <Select>
+                      {listData && listData.map( v => <Option value = {`${v.popularScienceCategoryId}`} >{v.categoryName}</Option> )} 
+                    </Select>
+                )}
+              </FormItem>
+              <FormItem
+                {...formItemLayout}
                 label="发布时间"
               >
-                {getFieldDecorator('publishDay', {
+                {getFieldDecorator('publishTime', {
                   rules: [{
                     required: true, message: '请选择时间',
                   }],
@@ -146,7 +188,7 @@ class FormBox extends React.Component {
                     validator: this.validateHtml,
                   }],
                 })(
-                  <Ueditor /> //<Editor style={{width:460}}/>                  
+                  <Ueditor/> //<Editor style={{width:460}}/>
                 )}
               </FormItem>
               <FormItem {...submitFormLayout} style={{ marginTop: 32 }}>
@@ -165,34 +207,33 @@ class FormBox extends React.Component {
     }
 }
 
-export default class NewsSave extends React.Component {
+export default class DetailSave extends React.Component {
     state={
         isEdit:false,
         editId:'',
     }
 
     handleSubmit = (e) => {
-
         e.preventDefault();
         this.formboxref.validateFieldsAndScroll((err, values) => {      
           if (!err) {
             console.log(values)
-            values.publishDay = moment(values.publishDay).format(dayFormat)
-            values.mainImgName = values.mainImgName.file ? values.mainImgName.file.response.data[0].fileName : values.mainImgName
-            values.htmlText = values.htmlText
+            values.publishTime = moment(values.publishTime).format(dayFormat)
+            values.mainImgName = values.mainImgName.file ? values.mainImgName.file.response.data[0].fileName : values.mainImgName        
+             
             this.save(values)
           }
         });
       }
-
-    save = (params) => {
+    
+      save = (params) => {
         const {isEdit,editId}=this.state
         const options ={
             method: 'POST',
-            url: isEdit ? API_URL.index.modifyLastTendency :  API_URL.index.addLastTendency,
+            url: isEdit ? API_URL.education.modifyPopularScience :  API_URL.education.addPopularScience,
             data: {
                 ...params,
-                lastTendencyId:isEdit ? editId : null,
+                popularScienceId:isEdit ? editId : null,
             },
             dataType: 'json',
             doneResult: data => {
@@ -201,8 +242,6 @@ export default class NewsSave extends React.Component {
                         message: data.success,
                         description: '',
                       })
-                    // this.changeModalView('modalVisible','close')
-                    // this.loadListData()
                     this.props.history.goBack()
                 } else {
                     Modal.error({ title: data.error});
@@ -215,19 +254,19 @@ export default class NewsSave extends React.Component {
       edit=(id)=>{
         const options ={
             method: 'POST',
-            url: API_URL.index.queryLastTendencyList,
+            url: API_URL.education.queryPopularScienceList,
             data: {
                 offset: 1,
                 limit: 1,
-                lastTendencyId:id,
+                popularScienceId:id,
             },
             dataType: 'json',
             doneResult: data => {
                 if (!data.error) {
                     const detail = data.datas[0] || data.data[0];
                     this.setState({
-                        detail,
                         isEdit:true,
+                        detail,
                         editId:id,
                     });
                 } else {
@@ -237,34 +276,54 @@ export default class NewsSave extends React.Component {
         }
         $.sendRequest(options)
       }
-
-      goback=()=>{
-        const { history }=this.props
-        history.goBack()
-      }
-
-      componentDidMount(){
-          const { id } = this.props.match ? this.props.match.params : ''
-          if(id){
-            this.edit(id)
-          }
-      }
     
+    
+      del = (id) => {
+        const options ={
+            method: 'POST',
+            url: API_URL.education.deletePopularScience,
+            data: {
+                offset: 1,
+                limit: 1,
+                popularScienceId:id,
+            },
+            dataType: 'json',
+            doneResult: data => {
+                if (!data.error) {
+                    notification['success']({
+                        message: data.success,
+                        description: '',
+                      })
+                    this.loadListData()
+                } else {
+                    Modal.error({ title: data.error });
+                }            
+            }
+        }
+        $.sendRequest(options)
+      }
+
+    componentDidMount(){        
+        const { id } = this.props.match ? this.props.match.params : ''
+        if(id){
+          this.edit(id)
+        }
+    }
+
     render(){
         const {isEdit, detail}=this.state
-        mapPropsToFields = () => (
-            isEdit ? 
+        const mapPropsToFields = () => (
+            isEdit ?        
               { 
-                  lastTendencyTitle:{value:detail.lastTendencyTitle},
+                  popularScienceTitle:{value:detail.popularScienceTitle},
                   mainImgName:{value:detail.mainImgName},
                   mainImgUrl:{value:detail.mainImgUrl},
-                  publishDay:{value:moment(detail.publishDay)},
-                  htmlText:{value:detail.htmlText},
+                  popularScienceCategoryId:{value:`${detail.popularScienceCategoryId}`},
+                  publishTime:{value:moment(detail.publishTime)},            
+                   htmlText:{value:detail.htmlText},
               } : null
             )
-
-        FormBox=Form.create({mapPropsToFields})(FormBox)
-
-        return( <FormBox ref={el=>{this.formboxref = el}} goback={this.goback} handleSubmit={this.handleSubmit}/> )
+          FormBox=Form.create({mapPropsToFields})(FormBox)
+        return( <FormBox ref={el=>{this.formboxref = el}} goback={this.props.history.goBack} handleSubmit={this.handleSubmit}/> )
     }
 }

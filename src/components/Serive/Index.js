@@ -18,30 +18,30 @@ class SearchForm extends Component {
         return (
             <Form onSubmit={this.props.handleSearch} layout="inline">
                 <FormItem label="医生姓名">
-                {getFieldDecorator('dname')(
+                {getFieldDecorator('doctorUserCompellation')(
                     <Input placeholder="请输入姓名" />
                 )}
                 </FormItem>
                 <FormItem label="医生手机号">
-                {getFieldDecorator('dmobile')(
+                {getFieldDecorator('doctorUserMobile')(
                     <Input placeholder="请输入手机号" />
                 )}
                 </FormItem>
                 <FormItem label="医学助理姓名">
-                {getFieldDecorator('aname')(
+                {getFieldDecorator('doctorAccUserCompellation')(
                     <Input placeholder="请输入姓名" />
                 )}
                 </FormItem>
                 <FormItem label="医学助理手机号">
-                {getFieldDecorator('amobile')(
+                {getFieldDecorator('doctorAccUserMobile')(
                     <Input placeholder="请输入手机号" />
                 )}
                 </FormItem>
                 <FormItem label="服务状态">
-                {getFieldDecorator('serive')(
+                {getFieldDecorator('status')(
                     <Select allowClear style={{width:120}}>
-                        <Option value="1">正常</Option>
-                        <Option value="0">结束</Option>
+                        <Option value="ACTIVE">正常</Option>
+                        <Option value="STOP">结束</Option>
                     </Select>
                 )}
                 </FormItem>
@@ -76,7 +76,7 @@ state = {
     });
     const options ={
         method: 'POST',
-        url: API_URL.index.queryLastTendencyList,
+        url: API_URL.serive.queryServiceDetail,
         data: {
             offset: 1,
             limit: pagination.pageSize,
@@ -201,10 +201,12 @@ state = {
     e.preventDefault();
     this.searchFormRef.validateFields((err, fieldsValue) => {
       if (err) return;
-      this.loadListData(fieldsValue)
+      const {pagination}=this.state
+      pagination.current = 1      
       this.setState({
         searchFormValues: fieldsValue,
-      });
+        pagination
+      },()=>{this.loadListData(fieldsValue)});
     });
   }
 
@@ -219,7 +221,11 @@ state = {
   renderSearchForm() {
     const { selectedRows, searchFormValues } = this.state;
     const mapPropsToFields = () => ({ 
-            lastTendencyTitle:{value:searchFormValues.lastTendencyTitle},
+            doctorUserCompellation:{value:searchFormValues.doctorUserCompellation},
+            doctorUserMobile:{value:searchFormValues.doctorUserMobile},
+            doctorAccUserCompellation:{value:searchFormValues.doctorAccUserCompellation},
+            doctorAccUserMobile:{value:searchFormValues.doctorAccUserMobile},
+            status:{value:searchFormValues.status},
           })
     SearchForm = Form.create({mapPropsToFields})(SearchForm)    
     return (
@@ -261,17 +267,17 @@ state = {
       },
       {
         title: '医生姓名',
-        dataIndex: 'name',
+        dataIndex: 'doctorUserCompellation',
         width:120
       },
       {
         title: '医生手机号码',
-        dataIndex: 'mobile',
+        dataIndex: 'doctorUserMobile',
         width:120        
       },      
       {
         title: '服务开始时间',
-        dataIndex: 'startTime',
+        dataIndex: 'applicationTime',
         width:150,
         sorter: true,
         render: (text,record,index) => (
@@ -280,7 +286,7 @@ state = {
       },
       {
         title: '服务结束时间',
-        dataIndex: 'endTime',
+        dataIndex: 'stopTime',
         width:150,
         sorter: true,
         render: (text,record,index) => (
@@ -289,19 +295,22 @@ state = {
       },
       {
         title: '医学助理姓名',
-        dataIndex: 'wx', 
+        dataIndex: 'doctorAccUserCompellation', 
         width:120,
       },
       {
         title: '医学助理手机号码',
-        dataIndex: 'wx2',
+        dataIndex: 'doctorAccUserMobile',
         width:150, 
       },
       {
         title: '服务状态',
-        dataIndex: 'bind', 
+        dataIndex: 'status', 
         width:80,
-        sorter: true,        
+        sorter: true,
+        render:(text,record)=>(
+          record.status =='ACTIVE' ? "正常" : record.status =='STOP' ? "结束" : "未知"  
+        )              
       }
     ];
 
@@ -309,7 +318,7 @@ state = {
     listData.map((d,i)=>{
         let list = {
             index: ((pagination.current - 1) || 0) * pagination.pageSize + i + 1,
-            id:d.lastTendencyId,
+            id:d.assistantServiceAuthId,
             ...d,
         }
         lists.push(list)
@@ -332,7 +341,7 @@ state = {
             lastTendencyTitle:{value:detail.lastTendencyTitle},
             mainImgName:{value:detail.mainImgName},
             publishDay:{value:moment(detail.publishDay)},
-            htmlText:{value:{editorContent:detail.htmlText}},
+             htmlText:{value:detail.htmlText},
         } : null
       ) 
     // FormBox=Form.create({mapPropsToFields})(FormBox)

@@ -3,7 +3,7 @@ import $ from '../../common/AjaxRequest';
 import moment from 'moment';
 import API_URL from '../../common/url';
 import { Row, Col, Popconfirm,  Card,Table, Form, Input, Select, Icon, Button, Dropdown, Menu, InputNumber, DatePicker, Modal, message, Upload, notification  } from 'antd';
-import Editor from '../common/Editor';
+import Editor from '../common/Editor';import Ueditor from '../../common/Ueditor/Ueditor';
 import {config,uploadser} from '../common/config';
 
 const { TextArea } = Input;
@@ -50,7 +50,7 @@ class FormBox extends React.Component {
 
     validateHtml=(rule, value, callback)=>{      
       if(value){
-        let html = this.delHtmlTag(value.editorContent)
+        let html = this.delHtmlTag(value)
         if (html) {
           callback();
           return;
@@ -102,24 +102,7 @@ class FormBox extends React.Component {
             <Icon type="plus" />选择图片
           </Button>
         );
-        const formItemLayout = {
-          labelCol: {
-            xs: { span: 24 },
-            sm: { span: 7 },
-          },
-          wrapperCol: {
-            xs: { span: 24 },
-            sm: { span: 12 },
-            md: { span: 10 },
-          },
-        };
-    
-        const submitFormLayout = {
-          wrapperCol: {
-            xs: { span: 24, offset: 0 },
-            sm: { span: 10, offset: 7 },
-          },
-        };        
+        const {formItemLayout,submitFormLayout} = config          
         return(
             <div>
             <Form onSubmit={this.props.handleSubmit} style={{ marginTop: 8 }}
@@ -200,7 +183,7 @@ class FormBox extends React.Component {
                     validator: this.validateHtml,
                   }],
                 })(
-                  <Editor style={{width:460}}/>
+                  <Ueditor/> //<Editor style={{width:460}}/>
                 )}
               </FormItem>
               <FormItem {...submitFormLayout} style={{ marginTop: 32 }}>
@@ -371,10 +354,12 @@ state = {
     e.preventDefault();
     this.searchFormRef.validateFields((err, fieldsValue) => {
       if (err) return;
-      this.loadListData(fieldsValue)
+      const {pagination}=this.state
+      pagination.current = 1      
       this.setState({
         searchFormValues: fieldsValue,
-      });
+        pagination
+      },()=>{this.loadListData(fieldsValue)});
     });
   }
 
@@ -524,7 +509,7 @@ state = {
             departmentLogoImgUrl:{value:detail.logoImgUuidUrl},
             departmentMainImgUrl:{value:detail.mainImgUuidUrl},
             introduction:{value:detail.introduction},
-            htmlText:{value:{editorContent:detail.htmlText}},
+             htmlText:{value:detail.htmlText},
         } 
       ) 
     FormBox=Form.create({mapPropsToFields})(FormBox)

@@ -5,9 +5,11 @@ import API_URL from '../../common/url';
 import { Row, Col, Popconfirm,  Card,Table, Form, Input, Select, Icon, Button, Dropdown, Menu, InputNumber, DatePicker, Modal, message, Upload, notification  } from 'antd';
 import Editor from '../common/Editor';
 import Ueditor from '../../common/Ueditor/Ueditor';
+import SelectCitys from '../common/SelectCitys';
 import {config,uploadser} from '../common/config';
 
 const FormItem = Form.Item;
+const { MonthPicker, RangePicker } = DatePicker;
 const { Option } = Select;
 const getValue = obj => Object.keys(obj).map(key => obj[key]).join(',');
 const dayFormat = 'YYYY-MM-DD'
@@ -28,8 +30,7 @@ class FormBox extends React.Component {
       }
     
     handleChange = ({ fileList }) => {
-      console.log(fileList)
-      if(fileList.status=="error" ){
+      if(fileList.status=="error"){
         message.warn("图片上传出错了，请重试！")
         fileList = []
       }
@@ -37,18 +38,18 @@ class FormBox extends React.Component {
     }
 
     delHtmlTag = (str)=>{
-      return str.replace(/<[^>]+>/g,"");
-    }
-
-    validateHtml=(rule, value, callback)=>{
-      if(value){
-        let html = this.delHtmlTag(value)
-        if (html) {
-          callback();
-          return;
-        }
-      }      
-      callback('请输入内容！');
+        return str.replace(/<[^>]+>/g,"");
+      }
+  
+    validateHtml=(rule, value, callback)=>{      
+        if(value){
+            let html = this.delHtmlTag(value)
+            if (html) {
+                callback();
+            return;
+            }
+        }      
+        callback('请输入内容！');
     }
     
     componentDidMount(){
@@ -66,7 +67,6 @@ class FormBox extends React.Component {
     }
 
     normFile = (rule, value, callback) => {
-      console.log(typeof value)
       if(typeof value =='string'){
           callback();
           return;
@@ -78,24 +78,26 @@ class FormBox extends React.Component {
     }
 
     render(){
-        const { getFieldDecorator, getFieldValue,getFieldsValue, setFieldsValue} = this.props.form;
+        const { getFieldDecorator, getFieldValue, setFieldsValue} = this.props.form;
         const { previewVisible, previewImage, submitting, fileList} = this.state;
+        const locationId = getFieldValue("locationId")
+        const location = locationId && locationId.label
         const uploadButton = (
           <div>
             <Icon type="plus" />
             <div className="ant-upload-text">上传图片</div>
           </div>
         );
-        const {formItemLayout,submitFormLayout} = config
+        const {formItemLayout,submitFormLayout} = config         
         return(
             <div>
             <Form onSubmit={this.props.handleSubmit} style={{ marginTop: 8 }}
             >
               <FormItem
                 {...formItemLayout}
-                label="动态标题"
+                label="会议标题"
               >
-                {getFieldDecorator('lastTendencyTitle', {
+                {getFieldDecorator('meetingTitle', {
                   rules: [{
                     required: true, message: '请输入标题',
                   }],
@@ -105,7 +107,7 @@ class FormBox extends React.Component {
               </FormItem>
               <FormItem
                 {...formItemLayout}
-                label="动态主图"
+                label="会议主图"
               >
                 {getFieldDecorator('mainImgName', {
                   rules: [{
@@ -126,14 +128,30 @@ class FormBox extends React.Component {
               </FormItem>
               <FormItem
                 {...formItemLayout}
-                label="发布时间"
+                label="会议时间"
               >
-                {getFieldDecorator('publishDay', {
+                {getFieldDecorator('meetingTime', {
                   rules: [{
                     required: true, message: '请选择时间',
                   }],
                 })(
-                  <DatePicker />
+                  <RangePicker showTime format="YYYY-MM-DD HH:mm:ss" placeholder={['开始时间','结束时间']}/>
+                )}
+              </FormItem>
+              <FormItem
+                {...formItemLayout}
+                label="会议地点"
+              >
+                {getFieldDecorator('locationId', {
+                  rules: [{
+                    required: true, message: '请选择地点',
+                  }],
+                })(
+                    <SelectCitys style={{width:150}} placeholder={location} 
+                    // defaultValue={locationId}
+                    // ChangeSelectprovinces ={this.ChangeSelectprovinces}
+                    // ChangeSelect = {this.handleChangeSelect.bind(this, 'workCityId')}
+                    />
                 )}
               </FormItem>
               <FormItem
@@ -141,12 +159,9 @@ class FormBox extends React.Component {
                 label="内容"
               >
                 {getFieldDecorator('htmlText', {
-                  rules: [{
-                    required: true,
-                    validator: this.validateHtml,
-                  }],
+                  rules: [{required: true,validator:this.validateHtml}],
                 })(
-                  <Ueditor /> //<Editor style={{width:460}}/>                  
+                  <Ueditor/> //<Editor style={{width:460}}/>
                 )}
               </FormItem>
               <FormItem {...submitFormLayout} style={{ marginTop: 32 }}>
@@ -165,34 +180,37 @@ class FormBox extends React.Component {
     }
 }
 
-export default class NewsSave extends React.Component {
+export default class MeetSave extends React.Component {
     state={
         isEdit:false,
         editId:'',
     }
 
     handleSubmit = (e) => {
-
         e.preventDefault();
-        this.formboxref.validateFieldsAndScroll((err, values) => {      
+        this.formboxref.validateFieldsAndScroll((err, values) => { 
+            const rangeTimeValue = values['meetingTime'];
           if (!err) {
-            console.log(values)
-            values.publishDay = moment(values.publishDay).format(dayFormat)
+            values.regionId = values.locationId ? values.locationId.value : null
             values.mainImgName = values.mainImgName.file ? values.mainImgName.file.response.data[0].fileName : values.mainImgName
-            values.htmlText = values.htmlText
+            values.beginTime = rangeTimeValue[0].format('YYYY-MM-DD HH:mm:ss')
+            values.endTime = rangeTimeValue[1].format('YYYY-MM-DD HH:mm:ss')
+             
+            values.locationId=null
+            values.meetingTime=null
             this.save(values)
           }
         });
       }
-
-    save = (params) => {
+    
+      save = (params) => {
         const {isEdit,editId}=this.state
         const options ={
             method: 'POST',
-            url: isEdit ? API_URL.index.modifyLastTendency :  API_URL.index.addLastTendency,
+            url: isEdit ? API_URL.index.modifyMeeting :  API_URL.index.addMeeting,
             data: {
                 ...params,
-                lastTendencyId:isEdit ? editId : null,
+                meetingId:isEdit ? editId : null,
             },
             dataType: 'json',
             doneResult: data => {
@@ -200,9 +218,7 @@ export default class NewsSave extends React.Component {
                     notification['success']({
                         message: data.success,
                         description: '',
-                      })
-                    // this.changeModalView('modalVisible','close')
-                    // this.loadListData()
+                      })                    
                     this.props.history.goBack()
                 } else {
                     Modal.error({ title: data.error});
@@ -215,19 +231,19 @@ export default class NewsSave extends React.Component {
       edit=(id)=>{
         const options ={
             method: 'POST',
-            url: API_URL.index.queryLastTendencyList,
+            url: API_URL.index.queryMeetingList,
             data: {
                 offset: 1,
                 limit: 1,
-                lastTendencyId:id,
+                meetingId:id,
             },
             dataType: 'json',
             doneResult: data => {
                 if (!data.error) {
                     const detail = data.datas[0] || data.data[0];
                     this.setState({
-                        detail,
                         isEdit:true,
+                        detail,
                         editId:id,
                     });
                 } else {
@@ -237,34 +253,53 @@ export default class NewsSave extends React.Component {
         }
         $.sendRequest(options)
       }
-
-      goback=()=>{
-        const { history }=this.props
-        history.goBack()
-      }
-
-      componentDidMount(){
-          const { id } = this.props.match ? this.props.match.params : ''
-          if(id){
-            this.edit(id)
-          }
-      }
     
+    
+      del = (id) => {
+        const options ={
+            method: 'POST',
+            url: API_URL.index.deleteMeeting,
+            data: {
+                meetingId:id,
+            },
+            dataType: 'json',
+            doneResult: data => {
+                if (!data.error) {
+                    notification['success']({
+                        message: data.success,
+                        description: '',
+                      })
+                    this.loadListData()
+                } else {
+                    Modal.error({ title: data.error });
+                }            
+            }
+        }
+        $.sendRequest(options)
+      }
+
+    componentDidMount(){        
+        const { id } = this.props.match ? this.props.match.params : ''
+        if(id){
+          this.edit(id)
+        }
+    }
+
     render(){
         const {isEdit, detail}=this.state
-        mapPropsToFields = () => (
-            isEdit ? 
+        const mapPropsToFields = () => (        
+            isEdit ?        
               { 
-                  lastTendencyTitle:{value:detail.lastTendencyTitle},
+                  meetingId:{value:detail.meetingId},
+                  meetingTitle:{value:detail.meetingTitle},
                   mainImgName:{value:detail.mainImgName},
                   mainImgUrl:{value:detail.mainImgUrl},
-                  publishDay:{value:moment(detail.publishDay)},
-                  htmlText:{value:detail.htmlText},
+                  locationId:{value:{value:detail.locationId,label:detail.location}},
+                  meetingTime:{value:[moment(detail.beginTime),moment(detail.endTime)]},
+                   htmlText:{value:detail.htmlText},
               } : null
             )
-
-        FormBox=Form.create({mapPropsToFields})(FormBox)
-
-        return( <FormBox ref={el=>{this.formboxref = el}} goback={this.goback} handleSubmit={this.handleSubmit}/> )
+          FormBox=Form.create({mapPropsToFields})(FormBox)
+        return( <FormBox ref={el=>{this.formboxref = el}} goback={this.props.history.goBack} handleSubmit={this.handleSubmit}/> )
     }
 }

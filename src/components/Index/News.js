@@ -5,6 +5,7 @@ import moment from 'moment';
 import API_URL from '../../common/url';
 import { Row, Col, Popconfirm,  Card,Table, Form, Input, Select, Icon, Button, Dropdown, Menu, InputNumber, DatePicker, Modal, message, Upload, notification  } from 'antd';
 import Editor from '../common/Editor';
+import Ueditor from '../../common/Ueditor/Ueditor';
 import {config,uploadser} from '../common/config';
 import './style.less';
 
@@ -43,7 +44,7 @@ class FormBox extends React.Component {
 
     validateHtml=(rule, value, callback)=>{      
       if(value){
-        let html = this.delHtmlTag(value.editorContent)
+        let html = this.delHtmlTag(value)
         if (html) {
           callback();
           return;
@@ -164,7 +165,7 @@ class FormBox extends React.Component {
                     validator: this.validateHtml,
                   }],
                 })(
-                  <Editor style={{width:460}}/>
+                  <Ueditor/> //<Editor style={{width:460}}/>
                 )}
               </FormItem>
               <FormItem {...submitFormLayout} style={{ marginTop: 32 }}>
@@ -334,11 +335,13 @@ state = {
   handleSearch = (e) => {
     e.preventDefault();
     this.searchFormRef.validateFields((err, fieldsValue) => {
-      if (err) return;      
-      this.loadListData(fieldsValue)
+      if (err) return;
+      const {pagination}=this.state
+      pagination.current = 1      
       this.setState({
         searchFormValues: fieldsValue,
-      });
+        pagination
+      },()=>{this.loadListData(fieldsValue)});
     });
   }
 
@@ -383,7 +386,7 @@ state = {
         console.log(values)
         values.publishDay = moment(values.publishDay).format(dayFormat)
         values.mainImgName = values.mainImgName.file ? values.mainImgName.file.response.data[0].fileName : values.mainImgName
-        values.htmlText = values.htmlText.editorContent
+         
         this.save(values)
       }
     });
@@ -501,7 +504,10 @@ state = {
         title: '创建时间',
         dataIndex: 'createTimeString',
         sorter: true,
-        width:200
+        width:200,
+        render: (text,record,index) => (
+          moment(record.createTimeString).format("YYYY-MM-DD HH:mm:ss")
+        )
       },      
       {
         title: '发布时间',
@@ -509,7 +515,7 @@ state = {
         sorter: true,
         width:200,
         render: (text,record,index) => (
-          moment(record.publishDay).format("YY.MM.DD")
+          moment(record.publishDay).format("YYYY-MM-DD")
         )
       },      
       {
@@ -554,7 +560,7 @@ state = {
             mainImgName:{value:detail.mainImgName},
             mainImgUrl:{value:detail.mainImgUrl},
             publishDay:{value:moment(detail.publishDay)},
-            htmlText:{value:{editorContent:detail.htmlText}},
+             htmlText:{value:detail.htmlText},
         } : null
       ) 
     FormBox=Form.create({mapPropsToFields})(FormBox)

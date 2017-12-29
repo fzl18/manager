@@ -11,7 +11,6 @@ import AjaxRequest from '../../common/AjaxRequest';
 import './style/setting.less';
 
 
-// import './style/list.less';
 
 
 class Setting extends React.Component {

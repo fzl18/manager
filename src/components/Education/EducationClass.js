@@ -4,6 +4,7 @@ import moment from 'moment';
 import API_URL from '../../common/url';
 import { Row, Col, Popconfirm,  Card,Table, Form, Input, Select, Icon, Button, Dropdown, Menu, InputNumber, DatePicker, Modal, message, Upload, notification  } from 'antd';
 import Editor from '../common/Editor';
+import Ueditor from '../../common/Ueditor/Ueditor';
 import {config,uploadser} from '../common/config';
 import SortList from '../common/SortList';
 
@@ -41,7 +42,7 @@ class FormBox extends React.Component {
 
     validateHtml=(rule, value, callback)=>{      
       if(value){
-        let html = this.delHtmlTag(value.editorContent)
+        let html = this.delHtmlTag(value)
         if (html) {
           callback();
           return;
@@ -276,10 +277,12 @@ state = {
     e.preventDefault();
     this.searchFormRef.validateFields((err, fieldsValue) => {
       if (err) return;
-      this.loadListData(fieldsValue)
+      const {pagination}=this.state
+      pagination.current = 1      
       this.setState({
         searchFormValues: fieldsValue,
-      });
+        pagination
+      },()=>{this.loadListData(fieldsValue)});
     });
   }
 
@@ -327,7 +330,7 @@ state = {
         listData.map(item => {
             // if (item.moduleDefineName != '录入者'){
                 sortList.push({
-                    key: item.order,
+                    key: item.popularScienceCategoryId,
                     name: item.categoryName,
                 });
             // }
@@ -445,13 +448,16 @@ state = {
       {
         title: '序号',
         dataIndex: 'index',
+        width:60,
       },
       {
         title: '分类名称',
         dataIndex: 'categoryName',
+        width:200,        
       },
       {
         title: '操作',
+        width:60,        
         render: (text,record,index) => (
           <div>
             <a href="javascript:;" onClick={()=>{this.changeModalView('modalVisible','open','edit',()=>{ this.edit(record.id) })}}>修改</a>
@@ -509,9 +515,9 @@ state = {
               scroll={{y:lists.length > config.listLength ? config.scroll.y : null}}
             />
             <Modal
-                title={isEdit ? '修改动态':'新建动态'}
+                title={isEdit ? '修改分类':'新建分类'}
                 visible={modalVisible}
-                width={800}
+                width={500}
                 onOk={this.handleAdd}
                 onCancel={this.changeModalView.bind(this,'modalVisible','close')}
                 footer={null}
@@ -519,7 +525,7 @@ state = {
                <FormBox ref={el=>{this.formboxref = el}} closeModalView={this.changeModalView} handleSubmit={this.handleSubmit}/>
             </Modal>
             <SortList ref={el => { this.sortListRef = el; }}
-                            // reload={this.loadData}
+                            reload={this.loadListData}
                             sortUrl={API_URL.education.sortPopularScienceCategory}
                             title={"分类排序"}
                             // data={{typeName,}}
