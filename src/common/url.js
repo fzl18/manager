@@ -14,6 +14,7 @@ if (!STATIC) {
         },
         common: {
             arealist: `${ENV.ADMIN_URL}/department/getRegionListByParentId.do`, // 获取省市接口（一级行政单位
+            queryAllProvinceContainCityList: `${ENV.ADMIN_URL}/department/queryAllProvinceContainCityList.do`, // 获取省市接口
             uploadimg:`${ENV.ADMIN_URL}/multimedia/uploadEditorImg.do`,
             uploadser:`${ENV.ADMIN_URL}/multimedia/uploadImg.do`,
             imgpath:`/multimedia/editor/img/get.do?value=`,
@@ -97,6 +98,14 @@ if (!STATIC) {
             topHotConversation:`${ENV.ADMIN_URL}/conversation/topHotConversation.do`,
             removeHotConversation:`${ENV.ADMIN_URL}/conversation/removeHotConversation.do`,
             addHotConversationManual:`${ENV.ADMIN_URL}/conversation/addHotConversationManual.do`,
+        },
+        arrangement:{
+            queryDoctorGroup:`${ENV.ADMIN_URL}/department/queryDoctorGroup.do`,
+            querySchedulingDetails:`${ENV.ADMIN_URL}/department/querySchedulingDetails.do`,
+            enableScheduling:`${ENV.ADMIN_URL}/department/enableScheduling.do`,
+            addScheduling:`${ENV.ADMIN_URL}/department/addScheduling.do`,
+            removeScheduling:`${ENV.ADMIN_URL}/department/removeScheduling.do`,
+            
         }
 	};
 }

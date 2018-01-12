@@ -39,7 +39,7 @@ class SearchForm extends Component {
                 </FormItem>
                 <FormItem label="服务状态">
                 {getFieldDecorator('status')(
-                    <Select allowClear style={{width:120}}>
+                    <Select allowClear style={{width:120}} placeholder="请选择">
                         <Option value="ACTIVE">正常</Option>
                         <Option value="STOP">结束</Option>
                     </Select>
@@ -78,7 +78,7 @@ state = {
         method: 'POST',
         url: API_URL.serive.queryServiceDetail,
         data: {
-            offset: 1,
+            offset: pagination.current || 1,
             limit: pagination.pageSize,
             ...params,
         },

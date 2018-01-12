@@ -143,14 +143,17 @@ class FormBox extends React.Component {
                 })(
                   <Upload
                     action={uploadser}
+                    accept={config.imgType}
+                    beforeUpload={config.beforeUpload}
                     listType="picture-card"
                     fileList={fileList}
                     onPreview={this.handlePreview}
                     onChange={this.handleChange}
+                    onRemove={config.imgRemove}
                   >
                     {fileList.length >= 1 ? null : uploadButton}
                   </Upload>              
-                )}
+                )}<div style={{color:'#ddd'}}>（图片小于5M，最佳尺寸174*116px）</div>
               </FormItem>
               <FormItem
                 {...formItemLayout}
@@ -185,7 +188,7 @@ class FormBox extends React.Component {
                 {getFieldDecorator('htmlText', {
                   rules: [{
                     required: true,
-                    validator: this.validateHtml,
+                    validator: config.validateHtml,
                   }],
                 })(
                   <Ueditor/> //<Editor style={{width:460}}/>
@@ -193,9 +196,9 @@ class FormBox extends React.Component {
               </FormItem>
               <FormItem {...submitFormLayout} style={{ marginTop: 32 }}>
                 <Button type="primary" htmlType="submit" loading={submitting}>
-                  提交
+                {this.props.isEdit ? '保存':'新建'}
                 </Button>
-                <Button style={{ marginLeft: 8 }} onClick={this.props.goback}>返回</Button>
+                <Button style={{ marginLeft: 8 }} onClick={this.props.goback}>取消</Button>
               </FormItem>
             </Form>
             <Modal visible={previewVisible} footer={null} onCancel={()=>{this.setState({previewVisible:false})}}>
@@ -324,6 +327,6 @@ export default class DetailSave extends React.Component {
               } : null
             )
           FormBox=Form.create({mapPropsToFields})(FormBox)
-        return( <FormBox ref={el=>{this.formboxref = el}} goback={this.props.history.goBack} handleSubmit={this.handleSubmit}/> )
+        return( <FormBox isEdit={isEdit} ref={el=>{this.formboxref = el}} goback={this.props.history.goBack} handleSubmit={this.handleSubmit}/> )
     }
 }

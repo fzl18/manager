@@ -8,6 +8,7 @@ import {config,uploadser} from '../common/config';
 import './style.less'
 
 const FormItem = Form.Item;
+const { TextArea } = Input;
 const { Option } = Select;
 const getValue = obj => Object.keys(obj).map(key => obj[key]).join(',');
 const dayFormat = 'YYYY-MM-DD'
@@ -48,6 +49,25 @@ class FormBox extends React.Component {
         }
       }      
       callback('请输入内容！');
+    }
+
+    validateKeys=(rule, value, callback)=>{
+      if(!value){
+        callback('关键词不能为空');
+      }else{
+        const k = []
+        value.map(data =>{
+          if(!data.keyword){
+            callback('关键词不能有空');
+          }else{
+            k.push('true')
+          }
+          if(k.length == value.length){
+            callback()
+            return
+          }           
+        })
+      }
     }
 
     remove = (k) => {
@@ -149,10 +169,11 @@ class FormBox extends React.Component {
               >
               {getFieldDecorator('questionStoreKeywordList', {
                   rules: [{
-                    required: true,message:'请至少添加一个关键词'
+                    required: true, message: '关键词不能为空',
+                    validator: this.validateKeys,
                   }],
                 })(
-                  <Button type="primary" onClick={this.add} style={{ width: '40%'}}>
+                  <Button type="primary" onClick={this.add} style={{ width:90}}>
                     <Icon type="plus" /> 添加
                   </Button>
                 )}                
@@ -161,7 +182,7 @@ class FormBox extends React.Component {
                 {...submitFormLayout}
                 label=""
               >
-                <div id="item" style={{width:'130%',display:'flex',flexWrap:'wrap'}}>{formItems}</div>
+                <div id="item" style={{width:'110%',display:'flex',flexWrap:'wrap'}}>{formItems}</div>
               </FormItem>              
               <FormItem
                 {...formItemLayout}
@@ -173,14 +194,15 @@ class FormBox extends React.Component {
                     validator: this.validateHtml,
                   }],
                 })(
-                  <Ueditor/> //<Editor style={{width:460}}/>
+                  // <Ueditor/> //<Editor style={{width:460}}/>
+                  <TextArea rows={8} />
                 )}
               </FormItem>
               <FormItem {...submitFormLayout} style={{ marginTop: 32 }}>
                 <Button type="primary" htmlType="submit" loading={submitting}>
-                  提交
+                {this.props.isEdit ? '保存':'新建'}
                 </Button>
-                <Button style={{ marginLeft: 8 }} onClick={this.props.goback}>返回</Button>
+                <Button style={{ marginLeft: 8 }} onClick={this.props.goback}>取消</Button>
               </FormItem>
             </Form>
             <Modal visible={previewVisible} footer={null} onCancel={()=>{this.setState({previewVisible:false})}}>
@@ -200,7 +222,7 @@ export default class Save extends React.Component {
 
     handleSubmit = (e) => {
         e.preventDefault();
-        this.formboxref.validateFieldsAndScroll((err, values) => {      
+        this.formboxref.validateFieldsAndScroll((err, values) => {
           if (!err) {
             values.publishDay = moment(values.publishDay).format(dayFormat)
             values.questionStoreKeywordList.map((v,i)=> values[`keywords[${i}]`] = v.keyword)

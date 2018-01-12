@@ -16,6 +16,7 @@ const SubMenu = Menu.SubMenu;
 class App extends React.Component {
     state = {
         collapsed: false,
+        showBack:'none',
     };
     toggle = () => {
         this.setState({
@@ -26,46 +27,105 @@ class App extends React.Component {
     getBreadcrumb = () => {
       const hashUrl = location.hash;
       const breadArr = [];      
-      const pushMap = (list,parent) => {
-        list.map((levelone,index) => {
-          if(!levelone.children){
-            if(levelone.path == hashUrl){
-              if(parent){
+      let parent=[], over = false
+      const pushMap = (list) => {        
+        list.map((data,index) => {
+          if(over){ return }
+          if(data.level == 0){
+            parent=[]
+          }
+          let re = new RegExp(data.path,'g')
+          // console.log(re.test(hashUrl))
+          if(data.path == hashUrl){
+            if(parent.length>0){
+              parent.map(data=>{
                 breadArr.push({
-                  ...parent
+                  ...data
                 })
-              }
-              breadArr.push({
-                name: levelone.name,
-                path: levelone.path,
               })
             }
-          }else{            
-            pushMap(levelone.children,{name :levelone.name,path: levelone.path,children:levelone.children});
+            breadArr.push({
+              ...data
+            })
+            over = true
+            return
+          }else{
+            if(data.children){
+              parent.push({
+                ...data
+              })
+              pushMap(data.children)
+            }else{
+              if(data.level == 0){
+                parent=[]
+              }else{
+                if(parent.length>1){
+                  parent.splice(data.level-1,1)
+                }                
+              }
+            }
           }
-        })
-      }
+        })}
+
+      // const pushMap = (list,parent) => {
+      //   list.map((levelone,index) => {
+      //     if(!levelone.children){
+      //       if(levelone.path == hashUrl){
+      //         if(parent){
+      //           breadArr.push({
+      //             ...parent
+      //           })
+      //         }
+      //         breadArr.push({
+      //           name: levelone.name,
+      //           path: levelone.path,
+      //         })
+      //       }
+      //     }else{            
+      //       pushMap(levelone.children,{name :levelone.name,path: levelone.path,children:levelone.children});
+      //     }
+      //   })
+      // }
       pushMap(menuList);
-      console.log(breadArr);
-      if(breadArr.length == 2){
-        return <span>
-        {breadArr[0].path ?
-        <Breadcrumb.Item><a href={breadArr[0].path}>{breadArr[0].name}</a></Breadcrumb.Item>
-        :
-        <Breadcrumb.Item>{breadArr[0].name}</Breadcrumb.Item>
-        }
-        &nbsp;/&nbsp;
-        <Breadcrumb.Item>{breadArr[1].name}</Breadcrumb.Item>
-        </span>
-      }else if(breadArr.length == 1){
-        return <Breadcrumb.Item>{breadArr[0].name}</Breadcrumb.Item>
-      }else {
-        return null;
+      return breadArr
+      // if(breadArr.length == 2){
+      //   return <span>
+      //   {breadArr[0].path ?
+      //   <Breadcrumb.Item><a href={breadArr[0].path}>{breadArr[0].name}</a></Breadcrumb.Item>
+      //   :
+      //   <Breadcrumb.Item>{breadArr[0].name}</Breadcrumb.Item>
+      //   }
+      //   &nbsp;/&nbsp;
+      //   <Breadcrumb.Item>{breadArr[1].name}</Breadcrumb.Item>
+      //   </span>
+      // }else if(breadArr.length == 1){
+      //   return <Breadcrumb.Item>{breadArr[0].name}</Breadcrumb.Item>
+      // }else {
+      //   return null;
+      // }
+    }
+
+    componentDidMount(){
+      const breadArr = this.getBreadcrumb()
+      if(breadArr.length > 0 && breadArr[breadArr.length-1].back){
+        this.setState({showBack:'block'})
+      }else{
+        this.setState({showBack:'none'})
       }
     }
 
+    componentWillReceiveProps(nextprops){
+      const breadArr = this.getBreadcrumb()
+      if(breadArr.length > 0 && breadArr[breadArr.length-1].back){
+        this.setState({showBack:'block'})
+      }else{
+        this.setState({showBack:'none'})
+      }      
+    }
 
     render() {
+        const { showBack } = this.state;
+        console.log(showBack)
         const menu = (
           <Menu className="config_menu" selectedKeys={[]} onClick={this.onMenuClick}>
             <Menu.Item disabled><Icon type="setting" />设置</Menu.Item>
@@ -73,7 +133,7 @@ class App extends React.Component {
             <Menu.Item key="logout"><Icon type="logout" />退出登录</Menu.Item>
           </Menu>
         );
-        const breadList = this.getBreadcrumb()
+        const breadList = this.getBreadcrumb().map( (list,i)=> <Breadcrumb.Item key={i}> {list.path ? <a href={`${location.pathname}${list.path}`}>{list.name}</a> : list.name }  </Breadcrumb.Item>)
         return (
             <Layout>
             <Sider
@@ -134,10 +194,18 @@ class App extends React.Component {
                   </span>
                   
                 {/* </Dropdown> */}
-              </Header>              
+              </Header>
+              <Row style={{padding:16,borderTop:'2px solid #eee',background:'#fff'}}>
+                <Col span={20}>
                 <Breadcrumb>
                   {breadList}
                 </Breadcrumb>
+                </Col>
+                <Col span={4} style={{textAlign:'right'}}>
+                  <a href="javascript:history.back()" style={{color:'#333',display:showBack }}><i style={{fontSize:16,marginRight:10,}} className="iconfont icon-fanhui" /> 返回 </a>
+                </Col>
+              </Row>
+              
               <Content style={{ margin: '20px 16px 0 16px', padding: 20, background: '#fff'}}>
               { this.props.children }
               </Content>

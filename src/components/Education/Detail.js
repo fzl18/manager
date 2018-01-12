@@ -161,10 +161,13 @@ class FormBox extends React.Component {
                 })(
                   <Upload
                     action={uploadser}
+                    accept={config.imgType}
+                    beforeUpload={config.beforeUpload}
                     listType="picture-card"
                     fileList={fileList}
                     onPreview={this.handlePreview}
                     onChange={this.handleChange}
+                    onRemove={config.imgRemove}
                   >
                     {fileList.length >= 1 ? null : uploadButton}
                   </Upload>              
@@ -273,7 +276,7 @@ class SearchForm extends Component {
                 <FormItem label="分类"
               >
                 {getFieldDecorator('popularScienceCategoryId')(
-                    <Select style={{width:150}} allowClear>
+                    <Select style={{width:150}} allowClear placeholder="请选择">
                       {listData.map( v => <Option value = {`${v.popularScienceCategoryId}`} >{v.categoryName}</Option> )}                      
                     </Select>
                 )}
@@ -311,7 +314,7 @@ state = {
         method: 'POST',
         url: API_URL.education.queryPopularScienceList,
         data: {
-            offset: 1,
+            offset: pagination.current || 1,
             limit: pagination.pageSize,
             ...params,
         },
@@ -586,7 +589,7 @@ state = {
       },
       {
         title: '分类',
-        dataIndex: 'popularScienceCategoryString',
+        dataIndex: 'categoryName',
         width:150,
       },
       {
@@ -595,7 +598,7 @@ state = {
         sorter: true,
         width:130,
         render:(text,record)=>(
-          moment(record.createTime).format("YY.MM.DD HH:mm:ss")
+          moment(record.createTime).format("YY-MM-DD HH:mm:ss")
         )
       },      
       {
@@ -604,7 +607,7 @@ state = {
         sorter: true,
         width:130,
         render:(text,record)=>(
-          moment(record.publishTime).format("YY.MM.DD")
+          moment(record.publishTime).format("YY-MM-DD")
         )
       },      
       {

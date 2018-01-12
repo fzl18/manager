@@ -246,7 +246,7 @@ state = {
         method: 'POST',
         url: API_URL.question.queryQuestionStoreList,
         data: {
-            offset: 1,
+            offset: pagination.current || 1,
             limit: pagination.pageSize,
             ...params,
         },
@@ -404,8 +404,8 @@ state = {
       if (!err) {
         console.log(values)
         values.publishDay = moment(values.publishDay).format(dayFormat)
-        values.answer = values.answer.editorContent
-        // this.save(values)
+        // values.answer = values.answer.editorContent
+        this.save(values)
       }
     });
   }
@@ -465,7 +465,7 @@ state = {
   del = (id) => {
     const options ={
         method: 'POST',
-        url: API_URL.question.deleteLastTendency,
+        url: API_URL.question.deleteQuestionStore,
         data: {
             offset: 1,
             limit: 1,
@@ -513,23 +513,28 @@ state = {
       {
         title: '序号',
         dataIndex: 'index',
+        width:60,
       },
       {
         title: '问题标题',
         dataIndex: 'question',
+        width:300,
       },
       {
         title: '关键字',
         dataIndex: 'keywords',
+        width:150,
       },
       {
         title: '创建时间',
         dataIndex: 'createTime',
         sorter: true,
+        width:130,
       },
      
       {
         title: '操作',
+        width:120,
         render: (text,record,index) => (
           <div>
             <Link to={`/question/save/${record.id}`}>修改</Link>

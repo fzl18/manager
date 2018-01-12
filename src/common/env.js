@@ -5,7 +5,7 @@ const DEV = {
 };
 
 const TEST = {
-    ADMIN_URL: 'http://192.168.10.202:12003/manager',  //179
+    ADMIN_URL: 'http://192.168.10.202:12003/manager',  //179 //152
     SAML_URL: '/saml',
     LOGOUT_URL: './',
 };

@@ -134,6 +134,8 @@ class FormBox extends React.Component {
                 })(
                   <Upload
                     action={uploadser}
+                    accept={config.imgType}
+                    beforeUpload={config.beforeUpload}
                     listType="picture-card"
                     fileList={fileList}
                     onPreview={this.handlePreview}
@@ -227,7 +229,7 @@ state = {
         method: 'POST',
         url: API_URL.index.queryLastTendencyList,
         data: {
-            offset: 1,
+            offset: pagination.current || 1,
             limit: pagination.pageSize,
             ...params,
         },
@@ -498,22 +500,19 @@ state = {
       {
         title: '动态标题',
         dataIndex: 'lastTendencyTitle',
-        width:500
+        width:300
       },
       {
         title: '创建时间',
         dataIndex: 'createTimeString',
         sorter: true,
-        width:200,
-        render: (text,record,index) => (
-          moment(record.createTimeString).format("YYYY-MM-DD HH:mm:ss")
-        )
+        width:110,
       },      
       {
         title: '发布时间',
         dataIndex: 'publishDay', 
         sorter: true,
-        width:200,
+        width:110,
         render: (text,record,index) => (
           moment(record.publishDay).format("YYYY-MM-DD")
         )

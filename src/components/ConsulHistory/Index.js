@@ -132,10 +132,13 @@ class FormBox extends React.Component {
                 })(
                   <Upload
                     action={uploadser}
+                    accept={config.imgType}
+                    beforeUpload={config.beforeUpload}
                     listType="picture-card"
                     fileList={fileList}
                     onPreview={this.handlePreview}
                     onChange={this.handleChange}
+                    onRemove={config.imgRemove}
                   >
                     {fileList.length >= 1 ? null : uploadButton}
                   </Upload>              
@@ -189,27 +192,27 @@ class SearchForm extends Component {
             <Form onSubmit={this.props.handleSearch} layout="inline">
                 <FormItem label="问题概要">
                 {getFieldDecorator('msg')(
-                    <Input placeholder="" />
+                    <Input placeholder="请输入问题概要" />
                 )}
                 </FormItem>
                 <FormItem label="提问者">
                 {getFieldDecorator('quizzers')(
-                    <Input placeholder="" style={{width:100}}/>
+                    <Input placeholder="请输入提问者" style={{width:100}}/>
                 )}
                 </FormItem>
                 <FormItem label="咨询对象">
                 {getFieldDecorator('counselors')(
-                    <Input placeholder="" style={{width:100}}/>
+                    <Input placeholder="请输入咨询对象" style={{width:100}}/>
                 )}
                 </FormItem>
-                <FormItem label="协助解答者">
+                <FormItem label="解答者">
                 {getFieldDecorator('solvers')(
-                    <Input placeholder="" style={{width:100}}/>
+                    <Input placeholder="请输入解答者" style={{width:100}}/>
                 )}
                 </FormItem>
                 <FormItem label="是否设为热门">
                 {getFieldDecorator('isHot')(
-                    <Select style={{width:80}} allowClear >
+                    <Select style={{width:80}} allowClear placeholder="请选择">
                       <Option value='1'>是</Option>
                       <Option value='0'>否</Option>
                     </Select>
@@ -248,7 +251,7 @@ state = {
         method: 'POST',
         url: API_URL.consul.queryConversation,
         data: {
-            offset: 1,
+            offset:pagination.current || 1,
             limit: pagination.pageSize,
             ...params,
         },
@@ -523,7 +526,7 @@ state = {
       {
         title: '问题概要',
         dataIndex: 'msg',
-        width:500,
+        width:250,
         render:(text,record)=>{
           return(
             <Link to={`/consulhistory/detail/${record.id}`}>{record.msg}</Link>
@@ -542,23 +545,23 @@ state = {
       },
       {
         title: '创建时间',
-        dataIndex: 'createTimeString',
+        dataIndex: 'createTime',
         sorter: true,
         width:150,
         render: (text,record,index) => (
-          moment(record.publishDay).format("YY-MM-DD")
+          moment(record.createTime).format("YY-MM-DD")
         )
       },
       {
-        title: '协助解答者',
+        title: '解答者',
         dataIndex: 'solvers',
-        width:200
+        width:150
       },
       {
         title: '是否设为热门',
         dataIndex: 'isHot',
         sorter: true,
-        width:120,
+        width:100,
         render:(text,record)=> (record.isHot ? "是":"否")
       },
       // {

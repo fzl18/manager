@@ -1,4 +1,6 @@
 import React, {Component} from 'react';
+import reactMixin from 'react-mixin';
+import { Prompt, Redirect } from 'react-router-dom'
 import $ from '../../common/AjaxRequest';
 import moment from 'moment';
 import API_URL from '../../common/url';
@@ -11,7 +13,7 @@ const FormItem = Form.Item;
 const { Option } = Select;
 const getValue = obj => Object.keys(obj).map(key => obj[key]).join(',');
 const dayFormat = 'YYYY-MM-DD'
-
+const confirm = Modal.confirm
 class FormBox extends React.Component {
     state={        
         submitting:false,
@@ -50,8 +52,9 @@ class FormBox extends React.Component {
       }      
       callback('请输入内容！');
     }
-    
-    componentDidMount(){
+
+   
+    componentDidMount(){      
       const  { getFieldValue} = this.props.form;
       const imgUrl= getFieldValue('mainImgUrl')
       const fileList = getFieldValue('mainImgUrl') ? [{
@@ -115,14 +118,17 @@ class FormBox extends React.Component {
                 })(
                   <Upload
                     action={uploadser}
+                    accept={config.imgType}
+                    beforeUpload={config.beforeUpload}
                     listType="picture-card"
                     fileList={fileList}
                     onPreview={this.handlePreview}
                     onChange={this.handleChange}
+                    onRemove={config.imgRemove}
                   >
                     {fileList.length >= 1 ? null : uploadButton}
                   </Upload>              
-                )}
+                )}<div style={{color:'#bbb'}}>（图片小于5M，最佳尺寸174*116px）</div>
               </FormItem>
               <FormItem
                 {...formItemLayout}
@@ -143,7 +149,7 @@ class FormBox extends React.Component {
                 {getFieldDecorator('htmlText', {
                   rules: [{
                     required: true,
-                    validator: this.validateHtml,
+                    validator: config.validateHtml,
                   }],
                 })(
                   <Ueditor /> //<Editor style={{width:460}}/>                  
@@ -151,9 +157,9 @@ class FormBox extends React.Component {
               </FormItem>
               <FormItem {...submitFormLayout} style={{ marginTop: 32 }}>
                 <Button type="primary" htmlType="submit" loading={submitting}>
-                  提交
+                  {this.props.isEdit ? '保存':'新建'}
                 </Button>
-                <Button style={{ marginLeft: 8 }} onClick={this.props.goback}>返回</Button>
+                <Button style={{ marginLeft: 8 }} onClick={this.props.goback}>取消</Button>
               </FormItem>
             </Form>
             <Modal visible={previewVisible} footer={null} onCancel={()=>{this.setState({previewVisible:false})}}>
@@ -165,21 +171,21 @@ class FormBox extends React.Component {
     }
 }
 
-export default class NewsSave extends React.Component {
+export default class NewsSave extends React.Component { 
     state={
         isEdit:false,
         editId:'',
+        isSaved:false,
     }
-
     handleSubmit = (e) => {
-
         e.preventDefault();
         this.formboxref.validateFieldsAndScroll((err, values) => {      
           if (!err) {
-            console.log(values)
+            // console.log(values.htmlText.length)
             values.publishDay = moment(values.publishDay).format(dayFormat)
             values.mainImgName = values.mainImgName.file ? values.mainImgName.file.response.data[0].fileName : values.mainImgName
             values.htmlText = values.htmlText
+            // this.setState({isSaved:true},()=>{this.save(values)})
             this.save(values)
           }
         });
@@ -202,10 +208,10 @@ export default class NewsSave extends React.Component {
                         description: '',
                       })
                     // this.changeModalView('modalVisible','close')
-                    // this.loadListData()
-                    this.props.history.goBack()
+                    // this.loadListData()                    
+                    this.props.history.goBack()                 
                 } else {
-                    Modal.error({ title: data.error});
+                  Modal.error({ title: data.error});
                 }            
             }
         }
@@ -244,14 +250,23 @@ export default class NewsSave extends React.Component {
       }
 
       componentDidMount(){
-          const { id } = this.props.match ? this.props.match.params : ''
-          if(id){
-            this.edit(id)
-          }
+        const { id } = this.props.match ? this.props.match.params : ''
+        if(id){
+          this.edit(id)
+        }
       }
-    
+
+      // shouldComponentUpdate(nextProps, nextState){
+      //   console.log(nextProps,nextState)
+      //   if(nextState.isSaved == true){
+      //       return false;
+      //   }
+      //   return true;
+      // }
+
+      
     render(){
-        const {isEdit, detail}=this.state
+        const {isEdit, detail,isSaved}=this.state
         mapPropsToFields = () => (
             isEdit ? 
               { 
@@ -264,7 +279,11 @@ export default class NewsSave extends React.Component {
             )
 
         FormBox=Form.create({mapPropsToFields})(FormBox)
-
-        return( <FormBox ref={el=>{this.formboxref = el}} goback={this.goback} handleSubmit={this.handleSubmit}/> )
+        return(
+        <div>
+        {/* <Prompt when={!isSaved} message="是否确认离开当前编辑页?" /> */}
+        <FormBox isEdit={isEdit} ref={el=>{this.formboxref = el}} goback={this.goback} handleSubmit={this.handleSubmit}/> 
+        </div>)
     }
 }
+

@@ -85,7 +85,7 @@ class SearchForm extends Component {
                 </FormItem>
                 <FormItem label="绑定状态">
                 {getFieldDecorator('bindStatus')(
-                    <Select allowClear style={{width:120}}>
+                    <Select allowClear style={{width:120}} placeholder="请选择">
                         <Option value="ACTIVE">已绑定</Option>
                         <Option value="INACTIVE">已解绑</Option>
                     </Select>
@@ -124,7 +124,7 @@ state = {
         method: 'POST',
         url: API_URL.usermanager.queryPatients,
         data: {
-            offset: 1,
+            offset: pagination.current || 1,
             limit: pagination.pageSize,
             ...params,
         },

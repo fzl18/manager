@@ -132,10 +132,13 @@ class FormBox extends React.Component {
                 })(
                   <Upload
                     action={uploadser}
+                    accept={config.imgType}
+                    beforeUpload={config.beforeUpload}
                     listType="picture-card"
                     fileList={fileList}
                     onPreview={this.handlePreview}
                     onChange={this.handleChange}
+                    onRemove={config.imgRemove}
                   >
                     {fileList.length >= 1 ? null : uploadButton}
                   </Upload>              
@@ -189,27 +192,27 @@ class SearchForm extends Component {
             <Form onSubmit={this.props.handleSearch} layout="inline">
                 <FormItem label="问题概要">
                 {getFieldDecorator('msg')(
-                    <Input placeholder="" />
+                    <Input placeholder="请输入问题概要" />
                 )}
                 </FormItem>
                 <FormItem label="提问者">
                 {getFieldDecorator('quizzers')(
-                    <Input placeholder="" style={{width:100}}/>
+                    <Input placeholder="请输入提问者" style={{width:100}}/>
                 )}
                 </FormItem>
                 <FormItem label="咨询对象">
                 {getFieldDecorator('counselors')(
-                    <Input placeholder="" style={{width:100}}/>
+                    <Input placeholder="请输入咨询对象" style={{width:100}}/>
                 )}
                 </FormItem>
-                <FormItem label="协助解答者">
+                <FormItem label="解答者">
                 {getFieldDecorator('solvers')(
-                    <Input placeholder="" style={{width:100}}/>
+                    <Input placeholder="请输入解答者" style={{width:100}}/>
                 )}
                 </FormItem>
                 <FormItem label="来源">
                 {getFieldDecorator('source')(
-                    <Select style={{width:80}} allowClear >
+                    <Select style={{width:80}} allowClear placeholder="请选择">
                       <Option value='历史咨询'>历史咨询</Option>
                       <Option value='自定义'>自定义</Option>
                     </Select>
@@ -217,7 +220,7 @@ class SearchForm extends Component {
                 </FormItem>
                 <FormItem label="是否置顶">
                 {getFieldDecorator('isTop')(
-                    <Select style={{width:80}} allowClear >
+                    <Select style={{width:80}} allowClear placeholder="请选择">
                       <Option value='1'>是</Option>
                       <Option value='0'>否</Option>
                     </Select>
@@ -256,7 +259,7 @@ state = {
         method: 'POST',
         url: API_URL.consul.queryHotConversation,
         data: {
-            offset: 1,
+            offset: pagination.current || 1,
             limit: pagination.pageSize,
             ...params,
         },
@@ -396,7 +399,7 @@ state = {
         <Row gutter={2}>
             <Col md={24} sm={24} >
                 <SearchForm handleSearch={this.handleSearch} ref = { el => {this.searchFormRef = el}}/>
-                <Link style={{float:'right',marginBottom:20}} to='/consulhot/diy'><Button icon="plus" type="primary">自定义</Button></Link>
+                <Link style={{float:'right',marginBottom:20}} to='/consulhot/diy'><Button icon="plus" type="primary" style={{marginRight:15}}>自定义</Button></Link>
             </Col>
             <Col md={2} sm={8} >            
             {
@@ -483,8 +486,6 @@ state = {
         method: 'POST',
         url: API_URL.consul.removeHotConversation,
         data: {
-            offset: 1,
-            limit: 1,
             hotConversationId:id,
         },
         dataType: 'json',
@@ -556,7 +557,7 @@ state = {
       {
         title: '问题概要',
         dataIndex: 'msg',
-        width:400,
+        width:200,
         render:(text,record)=>{
           return(
             <Link to={`/consulhot/detail/${record.id}`}>{record.msg}</Link>
@@ -573,46 +574,46 @@ state = {
         title: '提问者',
         dataIndex: 'quizzers',
         width:100,
-        render:(text,record)=> record.quizzers || '默认' 
+        render:(text,record)=> record.quizzers || '匿名' 
       },      
       {
         title: '咨询对象',
         dataIndex: 'counselors', 
-        width:100,       
+        width:80,       
       },
       {
-        title: '协助解答者',
+        title: '解答者',
         dataIndex: 'solvers',
-        width:200
+        width:100
       },
       {
         title: '设为热门时间',
         dataIndex: 'hotTime',
         sorter: true,
-        width:150,
+        width:110,
         render: (text,record,index) => (
           moment(record.hotTime).format("YY.MM.DD HH:mm:ss")
         )
       },      
       {
-        title: '是否置顶',
+        title: '置顶',
         dataIndex: 'isTop',
         sorter: true,
-        width:100,
+        width:60,
         render:(text,record)=> record.isTop ? '是':'否'
       },
       {
         title: '最新置顶时间',
         dataIndex: 'topTime',
         sorter: true,
-        width:160,
+        width:110,
         render: (text,record,index) => (
-          moment(record.topTime).format("YY.MM.DD HH:mm:ss")
+          record.topTime && moment(record.topTime).format("YY.MM.DD HH:mm:ss")
         )
       },
       {
         title: '操作',
-        width:150,
+        width:120,
         render: (text,record,index) => (
           <div style={{textAlign:'center'}}>
             { record.source !== "咨询历史" &&

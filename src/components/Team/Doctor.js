@@ -190,10 +190,13 @@ class FormBox extends React.Component {
               })(
                 <Upload
                   action={uploadser}
+                  accept={config.imgType}
+                  beforeUpload={config.beforeUpload}
                   listType="picture-card"
                   fileList={fileList}
                   onPreview={this.handlePreview}
                   onChange={this.handleChange}
+                  onRemove={config.imgRemove}
                 >
                   {fileList.length >= 1 ? null : uploadButton}
                 </Upload>              
@@ -274,7 +277,7 @@ class SearchForm extends Component {
                 </FormItem>
                 <FormItem label="医生职称">
                 {getFieldDecorator('doctorPosition')(
-                    <Select placeholder="请选择" style={{width:120}} allowClear>
+                    <Select placeholder="请选择" style={{width:120}} allowClear placeholder="请选择">
                       <Option value = "主任医师">主任医师</Option>
                       <Option value = "副主任医师">副主任医师</Option>
                       <Option value = "主治医师">主治医师</Option>
@@ -317,7 +320,7 @@ state = {
         method: 'POST',
         url: API_URL.index.queryDepartmentDoctor,
         data: {
-            offset: 1,
+            offset: pagination.current || 1,
             limit: pagination.pageSize,
             ...params,
         },
@@ -453,10 +456,10 @@ state = {
     SearchForm = Form.create({mapPropsToFields})(SearchForm)    
     return (
         <Row gutter={2}>
-            <Col md={18} sm={24} >
+            <Col md={20} sm={24} >
                 <SearchForm handleSearch={this.handleSearch} ref = { el => {this.searchFormRef = el}}/>
             </Col>
-            <Col md={6} sm={8} style={{textAlign:'right'}}>            
+            <Col md={4} sm={4} style={{textAlign:'right'}}>            
             {
                 selectedRows.length > 0 &&
                 <Popconfirm title="确定要删除吗？" onConfirm={()=>{this.del(this.state.selectedRows)}} okText="是" cancelText="否">
@@ -493,9 +496,9 @@ state = {
     this.formboxref.validateFieldsAndScroll((err, values) => {      
       if (!err) {
          
-        // values.doctorImgName = values.doctorImgName.file ? values.doctorImgName.file.response.data[0].fileName : values.doctorImgName
-        values.doctorImgName = "ddds.png"
-        values.userId = values.userId.key || values.userId
+        values.doctorImgName = values.doctorImgName.file ? values.doctorImgName.file.response.data[0].fileName : values.doctorImgName
+        // values.doctorImgName = "ddds.png"
+        values.ydataAccountId = values.userId.key || values.userId
         console.log(values)
         this.save(values)
       }
@@ -605,25 +608,31 @@ state = {
       {
         title: '序号',
         dataIndex: 'index',
+        width:60,
       },
       {
         title: '医生账号',
         dataIndex: 'userName',
+        width:130,
       },
       {
         title: '医生姓名',
         dataIndex: 'userCompellation',
+        width:120,
       },
       {
         title: '医生职称',
         dataIndex: 'doctorPosition',
+        width:130,
       },
       {
         title: '擅长',
         dataIndex: 'doctorAdept',
+        width:200,
       },
       {
         title: '操作',
+        width:120,
         render: (text,record,index) => (
           <div>
             {/* {!record.isbind ?
@@ -645,7 +654,8 @@ state = {
     listData.map((d,i)=>{
         let list = {
             index: ((pagination.current - 1) || 0) * pagination.pageSize + i + 1,
-            id:d.ydataUuid,
+            // id:d.ydataUuid,
+            id:d.ydataAccountId,
             ...d,
         }
         lists.push(list)

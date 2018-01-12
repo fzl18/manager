@@ -110,7 +110,7 @@ class FormBox extends React.Component {
               </FormItem>              
               <FormItem {...submitFormLayout} style={{ marginTop: 32 }}>
                 <Button type="primary" htmlType="submit" loading={submitting}>
-                  提交
+                {this.props.isEdit ? '保存':'新建'}
                 </Button>
                 <Button style={{ marginLeft: 8 }} onClick={this.props.closeModalView.bind(this,'modalVisible','close')}>取消</Button>
               </FormItem>
@@ -168,7 +168,7 @@ state = {
         method: 'POST',
         url: API_URL.education.queryPopularScienceCategoryList,
         data: {
-            offset: 1,
+            offset: pagination.current || 1,
             limit: pagination.pageSize,
             ...params,
         },
@@ -302,10 +302,10 @@ state = {
     SearchForm = Form.create({mapPropsToFields})(SearchForm)    
     return (
         <Row gutter={2}>
-            <Col md={18} sm={24} >
+            <Col md={20} sm={24} >
                 <SearchForm handleSearch={this.handleSearch} ref = { el => {this.searchFormRef = el}}/>
             </Col>
-            <Col md={6} sm={8} style={{textAlign:'right'}}>            
+            <Col md={4} sm={8} style={{textAlign:'right'}}>            
             {
                 selectedRows.length > 0 &&
                 <Popconfirm title="确定要删除吗？" onConfirm={()=>{this.del(this.state.selectedRows)}} okText="是" cancelText="否">
@@ -522,7 +522,7 @@ state = {
                 onCancel={this.changeModalView.bind(this,'modalVisible','close')}
                 footer={null}
             >
-               <FormBox ref={el=>{this.formboxref = el}} closeModalView={this.changeModalView} handleSubmit={this.handleSubmit}/>
+               <FormBox isEdit={isEdit} ref={el=>{this.formboxref = el}} closeModalView={this.changeModalView} handleSubmit={this.handleSubmit}/>
             </Modal>
             <SortList ref={el => { this.sortListRef = el; }}
                             reload={this.loadListData}

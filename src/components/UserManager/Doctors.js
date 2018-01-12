@@ -78,7 +78,7 @@ class FormBox extends React.Component {
 
   componentDidMount(){
     const {getFieldDecorator,getFieldValue}=this.props.form
-    const departmentId = getFieldValue('departmentId')
+    const departmentId = getFieldValue('hospitalDepartmentId')
     this.loadHospital()
     if(departmentId && departmentId !='undefined' && departmentId !='null' ){
       this.loadDepartment({'hospitalId':departmentId})
@@ -90,7 +90,7 @@ class FormBox extends React.Component {
       const {assistants} = this.props
       const {hospital,department,departmentId}=this.state
       const hospitalName = getFieldValue('hospitalName') || ''
-      const departmentName = getFieldValue('departmentName') || ''
+      const departmentLocalName = getFieldValue('departmentLocalName') || ''
       const formItemLayout = {
         labelCol: {
           xs: { span: 24 },
@@ -132,8 +132,8 @@ class FormBox extends React.Component {
             >
               {getFieldDecorator('userMobile', {
                 rules: [{
-                  required: true, message: '请选输入手机号',
-                  pattern:/^1[3|4|5|8][0-9]\d{4,8}$/,
+                  required: true, message: '请输入手机号',
+                  pattern:/^1[3|4|5|8][0-9]\d{8}$/,
                 }],
               })(
                 <Input placeholder="请输入手机号" />
@@ -149,7 +149,7 @@ class FormBox extends React.Component {
                 }],
               })(
                 <Select placeholder="请选择" onChange={this.handleSelectChange.bind(this,'hospitalId')}>
-                  {hospital.length >0 ? hospital.map(v=><Option value={`${v.hospitalId}`}>{v.hospitalName}</Option> ):null}
+                  {hospital.length >0 ? hospital.map((v,i)=><Option key={i} value={`${v.hospitalId}`}>{v.hospitalName}</Option> ):null}
                 </Select>
               )}
             </FormItem>
@@ -157,21 +157,21 @@ class FormBox extends React.Component {
               {...formItemLayout}
               label={assistants ? "部门" : "科室"}
             >
-              {getFieldDecorator('departmentId', {
+              {getFieldDecorator('hospitalDepartmentId', {
                 rules: [{
                   required: false, message: '请选择',
                 }],
               })(
                 <Select placeholder="请选择" onChange={this.handleSelectChange.bind(this,'departmentId')}>
                   { department.length >0 ?
-                    department.map(v=><Option value={`${v.departmentId}`}>{v.departmentName}</Option> ) : null}
+                    department.map(v=><Option value={`${v.hospitalDepartmentId}`}>{v.departmentLocalName}</Option> ) : null}
                 </Select>
               )}
             </FormItem>
 
             <FormItem {...submitFormLayout} style={{ marginTop: 32 }}>
               <Button type="primary" htmlType="submit">
-                提交
+              {this.props.isEdit ? '保存':'新建'}
               </Button>
               <Button style={{ marginLeft: 8 }} onClick={this.props.changeModalView.bind(this,'modalVisible','close')}>取消</Button>
             </FormItem>
@@ -199,10 +199,10 @@ class SearchForm extends Component {
                 </FormItem>
                 <FormItem label="绑定状态">
                 {getFieldDecorator('bindStatus')(
-                    <Select allowClear style={{width:120}}>
+                    <Select allowClear style={{width:120}} placeholder="请选择">
                         <Option value="ACTIVE">已绑定</Option>
                         <Option value="INACTIVE">已解绑</Option>
-                        <Option value="NOACTIVE">未绑定过</Option>
+                        <Option value="NOACTIVE">未绑定</Option>
                     </Select>
                 )}
                 </FormItem>
@@ -241,7 +241,7 @@ state = {
         method: 'POST',
         url: assistants ? API_URL.usermanager.queryAssistantByHospitalDepartmentId : API_URL.usermanager.queryDoctorByHospitalDepartmentId,
         data: {
-            offset: 1,
+            offset: pagination.current || 1,
             limit: pagination.pageSize,
             ...params,
         },
@@ -403,7 +403,7 @@ state = {
         url: url,
         data: {
             ...params,
-            userId:isEdit ? editId : null,
+            ydataUuId:isEdit ? editId : null,
         },
         dataType: 'json',
         doneResult: data => {
@@ -562,12 +562,12 @@ state = {
       {
         title: '姓名',
         dataIndex: 'userCompellation',
-        width:120,
+        width:80,
       },
       {
         title: '手机号码',
         dataIndex: 'userMobile',
-        width:150,        
+        width:100,        
       },      
       {
         title: '单位',
@@ -576,35 +576,35 @@ state = {
       },
       {
         title: '部门科室',
-        dataIndex: 'departmentName', 
+        dataIndex: 'departmentLocalName', 
         width:150,
       },
       {
         title: '微信号',
         dataIndex: 'openId', 
-        width:150,
+        width:80,
       },
       {
         title: '微信昵称',
         dataIndex: 'nickName',
-        width:100,
+        width:60,
       },
       {
         title: '绑定状态',
         dataIndex: 'bindStatus',
-        width:80,
+        width:60,
         render:(text,react)=>
-        react.bindStatus =='NOACTIVE' ? "未绑定过": react.bindStatus == "INACTIVE" ? "已解绑" : react.bindStatus == "ACTIVE" ? "已绑定" : "未绑定过"
+        react.bindStatus =='NOACTIVE' ? "未绑定": react.bindStatus == "INACTIVE" ? "已解绑" : react.bindStatus == "ACTIVE" ? "已绑定" : "未绑定"
       },
       {
         title: '最近一次绑定时间',
         dataIndex: 'lastAccessTime', 
-        width:150,
+        width:130,
         sorter: true,
       },
       {
         title: '操作',
-        width:130,
+        width:100,
         render: (text,record,index) => (
           <div style={{textAlign:'center'}}>
             <Popconfirm title="确定要重置密码吗？" onConfirm={()=>{this.resetUserPassword(record.id)}} okText="是" cancelText="否">
@@ -626,7 +626,7 @@ state = {
         let list = {
             index: ((pagination.current - 1) || 0) * pagination.pageSize + i + 1,
             uuid:i,
-            id:d.userId,
+            id:d.ydataAccountId,
             ...d,
         }
         lists.push(list)
@@ -649,8 +649,8 @@ state = {
             userCompellation:{value:detail.userCompellation},
             hospitalId:{value:detail.hospitalId ? `${detail.hospitalId}`:''},
             hospitalName:{value:detail.hospitalName},
-            departmentId:{value: detail.departmentId ? `${detail.departmentId}` :''},
-            departmentName:{value:detail.departmentName},
+            hospitalDepartmentId:{value: detail.hospitalDepartmentId ? `${detail.hospitalDepartmentId}` :''},
+            departmentLocalName:{value:detail.departmentLocalName},
         } : null
       ) 
     FormBox=Form.create({mapPropsToFields})(FormBox)
@@ -684,7 +684,7 @@ state = {
                 onCancel={this.changeModalView.bind(this,'modalVisible','close')}
                 footer={null}
             >
-               <FormBox ref={el=>{this.formboxref = el}} assistants={assistants} changeModalView={this.changeModalView}  handleSubmit={this.handleSubmit}/>
+               <FormBox isEdit={isEdit} ref={el=>{this.formboxref = el}} assistants={assistants} changeModalView={this.changeModalView}  handleSubmit={this.handleSubmit}/>
             </Modal>
       </div>
     );

@@ -12,7 +12,6 @@ import './style.less'
 const FormItem = Form.Item
 const {Option}=Select
 const { TextArea } = Input;
-let t = 0
 class ListBox extends React.Component {
   state={
     submitting:false,
@@ -20,6 +19,7 @@ class ListBox extends React.Component {
     previewImage:'',
     loading:false,
     dataSource:[],
+    t:0
   }
 
   handlePreview = (file) => {
@@ -30,11 +30,12 @@ class ListBox extends React.Component {
   }
   
   handleChange = (index,{ fileList }) => {
+    // console.log(fileList)
     if(fileList.status=="error"){  // 
       notification['warn']({
         message: "图片操作出错，请重试！",
         description: '',
-      })      
+      })
     }
     // if(!fileList.response ){  // 
     //   notification['warn']({
@@ -48,7 +49,7 @@ class ListBox extends React.Component {
         dataSource[index].imgList = fileList.map(v=> v.response && v.response.data.map(d=>d.fileName)).join(';')
         dataSource[index].viewImgList = fileList.map(v=> v.response && v.response.data.map(d=>d.url).join())
         this.props.onChange(dataSource)
-      },200)
+      },500)
     })
   }
 
@@ -58,15 +59,26 @@ class ListBox extends React.Component {
     this.props.onChange(dataSource)
   }
 
+  initT=()=>{
+    let {t}=this.state
+    t=0
+    this.setState({t})
+  }
+  // shouldComponentUpdate(nextProps, nextState) {
+  //   console.log(nextProps, nextState)
+  //   return true
+  // }
   componentDidMount(){
-    // let t1 = new TouchScroll({id:'hotscroll','width':5,'opacity':0.5,color:'#555',minLength:20});
     const {dataSource} = this.props
     this.setState({dataSource})
+    // setTimeout(()=>{let t1 = new TouchScroll({id:'hotscroll','width':5,'opacity':0.5,color:'#555',minLength:20})},200)
   }
 
-  componentWillReceiveProps(nextprops){    
+  componentWillReceiveProps(nextprops){
+    // let {t}=this.state
+    // console.log(t)
     // if(nextprops.dataSource.length>0 && t == 0 ){
-    //   t++
+    //   ++t
       nextprops.dataSource.map((list,i) =>{
         const imgs = []
         const viewImgList = list.viewImgList || []
@@ -82,6 +94,7 @@ class ListBox extends React.Component {
         })
         this.setState({
           [`fileList${i}`]:imgs,
+          // t,
         })
       })
     // }
@@ -94,7 +107,7 @@ class ListBox extends React.Component {
     const bty={lineHeight:'50px',fontSize:35,color:'#46C883'}
     const yty={lineHeight:'50px',fontSize:35,color:'#0088D5'}
     return (
-      <div id='hotscroll' style={{margin:'0 10px', padding:'15px 20px',maxHeight:"340px",overflowY:'auto',overflowX:'hidden'}}>
+      <div id='hotscroll' className='scrollbar'>
         {dataSource.length>0 && dataSource.map((list,i ) => {
           
           return (<Row type="flex" align="top" gutter={2} key={i}>
@@ -104,7 +117,7 @@ class ListBox extends React.Component {
               </Avatar><br /> {list.type =='patient' ? '患者': '医生' }</Col>
               <Col span={17}>
                   <Row>
-                      <Col span={24}><TextArea rows={3} value={list.txt} onChange={(value)=>{this.txtChange(i,value)}} /></Col>
+                      <Col span={24}><TextArea placeholder="请输入内容" rows={3} value={list.txt} onChange={(value)=>{this.txtChange(i,value)}} /></Col>
                       {/* <Col span={24} style={{margin:"10px 10px 20px 0"}}>{list.viewImgList.map(img=><img src={img} width='50' height='50' />)}</Col> */}
                   </Row>
               </Col>
@@ -112,9 +125,11 @@ class ListBox extends React.Component {
               <Upload
                 action={uploadser}
                 // key={i}
+                accept={config.imgType}
                 listType="picture"
+                beforeUpload={config.beforeUpload}
                 fileList= {this.state[`fileList${i}`] || [] } //  {imgs}
-                multiple={true}
+                // multiple={true}
                 onPreview={this.handlePreview}
                 onChange={this.handleChange.bind(this,i)}
               >
@@ -123,7 +138,7 @@ class ListBox extends React.Component {
               </a>
               </Upload>
               </Col>
-              <Col span={3} style={{textAlign:'right'}}><Button type='danger' size='large' style={{position:'relative',top:'20px'}} onClick={()=>{this.props.del(i)}}><i className="iconfont icon-delete"/>删除</Button></Col>
+              <Col span={3} style={{textAlign:'right'}}><Popconfirm title="确定删除吗？" onConfirm={()=>{this.props.del(i)}} > <Button type='danger' size='large' style={{position:'relative',top:'20px'}}><i className="iconfont icon-delete"/>删除</Button></Popconfirm></Col>
           </Row>
         )})}
         <Modal visible={previewVisible} footer={null} onCancel={()=>{this.setState({previewVisible:false})}}>
@@ -157,6 +172,7 @@ export default class Diy extends React.Component {
         doctorList:[],
         selectDocter:'',
         editId:null,
+        item:[],
     }
 
     queryHotConversationDetail =(id)=>{      
@@ -207,6 +223,7 @@ export default class Diy extends React.Component {
     del=(i)=>{
       const {dataSource}=this.state
       dataSource.splice(i,1)
+      // this.ListBoxRef.initT()
       this.setState({dataSource})
     }
 
@@ -246,12 +263,25 @@ export default class Diy extends React.Component {
       // conversationDetails[1].msg=字符串,
       // conversationDetails[0].mediaId=图片路径,
       // conversationDetails[1].mediaId=图片路径
-      const {dataSource,selectDocter}=this.state
+      const {dataSource,selectDocter,item}=this.state
+      let empty = true
       if(!selectDocter){message.warn('请选择咨询对象！');return }
-      if(dataSource.length < 2){message.warn('至少添加一组！');return }
-
-
-        
+      dataSource.map((data,i) =>{
+        if(!data.txt){
+          empty = true ;return 
+          }else{
+            if(data.type =="patient"){
+              item[0]=1
+            }else if(data.type =="doctor"){
+              item[1]=1
+            }
+            empty = false
+          }             
+      })
+      if(empty){message.warn('内容不能为空！');return}
+      this.setState({item})
+      if(item.length<2){message.warn('至少添加一组！');return}
+      if(!dataSource[0].txt){ message.warn('内容不能为空！');return }
 
       const params = {}
       dataSource.map((data,i) =>{
@@ -314,10 +344,10 @@ export default class Diy extends React.Component {
                 </Col>
                 <Col span={8} style={hty}><i style={{color:'red'}}> * </i>点击患者/医生图标，新增一行</Col>
               </Row>
-              <ListBox dataSource={dataSource} del={this.del} onChange={this.listChange}/>
+              <ListBox ref={(el)=>{ this.ListBoxRef = el}} dataSource={dataSource} del={this.del} onChange={this.listChange}/>
               <Row>
-                <Col span={1} push={4}><Button type='primary' onClick={this.handleSubmit}>提交</Button></Col>
-                <Col span={1} push={5}><Button onClick={history.goBack}>返回</Button></Col>
+                <Col span={1} push={4}><Button type='primary' onClick={this.handleSubmit}>{isEdit ? '保存':'新建'}</Button></Col>
+                <Col span={1} push={5}><Button onClick={history.goBack}>取消</Button></Col>
               </Row>
             </Spin>
         )

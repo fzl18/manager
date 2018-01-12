@@ -42,7 +42,8 @@ state = {
         url: this.props.hot ? API_URL.consul.queryHotConversationDetail : API_URL.consul.queryHotConversationDetail,
         data: {
             offset: 1,
-            limit: pagination.pageSize,            
+            // limit: pagination.pageSize,            
+            limit: 999999,
             conversationId:this.props.hot ? this.props.id : this.props.match.params.id,
             ...params,
         },
@@ -368,10 +369,10 @@ state = {
                     <Col span={2}><Avatar style={{width:50,height:50,lineHeight:'50px',borderRadius:'50%',background:'#eee'}}>{v.ydataAccount.accType == "DOCTOR" ? <i className="iconfont icon-shouye1" style={{lineHeight:'50px',fontSize:35,color:'#0088D5'}}/> : <i className="iconfont icon-ren" style={{lineHeight:'50px',fontSize:35,color:'#46C883'}}/>}  </Avatar></Col>
                     <Col span={18}>
                         <Row align="top">
-                            <Col span={3}>{v.ydataAccount.accType == "DOCTOR" ? v.ydataAccount.ydataAccountCompellation || "医生" : "默认病人"}</Col>
+                            <Col span={3}>{v.ydataAccount.accType == "DOCTOR" ? v.ydataAccount.ydataAccountCompellation || "医生" : v.ydataAccount.ydataAccountCompellation || "匿名"}</Col>
                             <Col span={10}>{v.createTime}</Col>
                             <Col span={24}>
-                            {v.mediaIdurl && v.mediaIdurl.map( d => <div><img src = {d} /><br/></div>)}                            
+                            {v.mediaIdurl && v.mediaIdurl.map( d => <div><img src = {d} width='300'/><br/></div>)}                            
                             {v.msg}</Col>
                         </Row>
                     </Col>

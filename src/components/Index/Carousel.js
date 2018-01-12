@@ -132,14 +132,17 @@ class FormBox extends React.Component {
                 })(
                   <Upload
                     action={uploadser}
+                    accept={config.imgType}
+                    beforeUpload={config.beforeUpload}
                     listType="picture-card"
                     fileList={fileList}
                     onPreview={this.handlePreview}
                     onChange={this.handleChange}
+                    onRemove={config.imgRemove}
                   >
                     {fileList.length >= 1 ? null : uploadButton}
                   </Upload>              
-                )}
+                )}<div style={{color:'#bbb'}}>（图片小于5M，最佳尺寸174*116px）</div>
               </FormItem>
               {/* <FormItem
                 {...formItemLayout}
@@ -174,7 +177,7 @@ class FormBox extends React.Component {
               </FormItem>
               <FormItem {...submitFormLayout} style={{ marginTop: 32 }}>
                 <Button type="primary" htmlType="submit" loading={submitting}>
-                  提交
+                {this.props.isEdit ? '保存':'新建'}
                 </Button>
                 <Button style={{ marginLeft: 8 }} onClick={this.props.closeModalView.bind(this,'modalVisible','close')}>取消</Button>
               </FormItem>
@@ -232,7 +235,7 @@ state = {
         method: 'POST',
         url: API_URL.index.queryCarrouselImgList,
         data: {
-            offset: 1,
+            offset: pagination.current || 1,
             limit: pagination.pageSize,
             ...params,
         },
@@ -404,10 +407,8 @@ state = {
       if (!err) {
         // values.mainImgName = values.mainImgName.file.name 
         if(values.mainImgName.file != null && values.mainImgName.file != undefined){
-          // values.mainImgName = values.mainImgName.file.response.data[0].fileName
-          values.mainImgName='xxx'
-        }
-        
+          values.mainImgName = values.mainImgName.file.response.data[0].fileName
+        }        
         this.save(values)
       }
     });
@@ -539,7 +540,7 @@ state = {
         title: '首页轮播图顺序',
         dataIndex: 'item',
         sorter: true,
-        render:(text,record)=> record.item + 1
+        // render:(text,record)=> record.item + 1
       },      
       {
         title: '创建时间',
@@ -617,7 +618,7 @@ state = {
                 onCancel={this.changeModalView.bind(this,'modalVisible','close')}
                 footer={null}
             >
-               <FormBox ref={el=>{this.formboxref = el}} closeModalView={this.changeModalView} handleSubmit={this.handleSubmit}/>
+               <FormBox isEdit={isEdit} ref={el=>{this.formboxref = el}} closeModalView={this.changeModalView} handleSubmit={this.handleSubmit}/>
             </Modal>
             <SortList ref={el => { this.sortListRef = el; }}
               reload={this.loadListData}

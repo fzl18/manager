@@ -1,5 +1,6 @@
 import React, {Component} from 'react';
 import $ from '../../common/AjaxRequest';
+import { Prompt } from 'react-router-dom'
 import moment from 'moment';
 import API_URL from '../../common/url';
 import { Row, Col, Popconfirm,  Card,Table, Form, Input, Select, Icon, Button, Dropdown, Menu, InputNumber, DatePicker, Modal, message, Upload, notification  } from 'antd';
@@ -64,13 +65,14 @@ class AddInput extends Component {
         </Col>
         <Col >
           {this.props.length > 1 ? (
+            <Popconfirm title="确定要删除?" onConfirm={this.props.remove} onCancel={()=>{}} okText="是" cancelText="否">
             <Icon
               className="dynamic-delete-button"
               type="close-circle"
               style={{color:'#f04028',fontSize:20,borderRadius:'50%',position:'relative',left:'7px',top:'3px',}}
               disabled={this.props.length === 1}
-              onClick={this.props.remove}
             />
+            </Popconfirm>
           ) : null}
         </Col>
       </InputGroup>
@@ -146,7 +148,7 @@ class FormBox extends React.Component {
     
     componentDidMount(){
       const  { getFieldValue} = this.props.form;
-      const centers = getFieldValue('centers')
+      const centers = getFieldValue('centers') || []
       const imgUrl= getFieldValue('mainImgNameUrl')
       const fileList = getFieldValue('mainImgNameUrl') ? [{
         uid: -1,
@@ -181,6 +183,7 @@ class FormBox extends React.Component {
           </div>
         );
         const {formItemLayout,submitFormLayout} = config
+        console.log(getFieldValue('subjectTime'))
         const site = centers && centers.map((k, index) =>
         <FormItem
         {...(index === 0 ? formItemLayout : submitFormLayout)}
@@ -218,14 +221,17 @@ class FormBox extends React.Component {
                 })(
                   <Upload
                     action={uploadser}
+                    accept={config.imgType}
+                    beforeUpload={config.beforeUpload}
                     listType="picture-card"
                     fileList={fileList}
                     onPreview={this.handlePreview}
                     onChange={this.handleChange}
+                    onRemove={config.imgRemove}
                   >
                     {fileList.length >= 1 ? null : uploadButton}
                   </Upload>              
-                )}
+                )}<div style={{color:'#bbb'}}>（图片小于5M，最佳尺寸174*116px）</div>
               </FormItem>
               <FormItem
                 {...formItemLayout}
@@ -250,7 +256,7 @@ class FormBox extends React.Component {
                 })(
                     <Select allowClear >
                         <Option value='INTERVENTION'>干预</Option>
-                        <Option value='NON-INTERVENTION'>非干预</Option>
+                        <Option value='NON_INTERVENTION'>非干预</Option>
                     </Select>
                 )}
               </FormItem>
@@ -341,7 +347,7 @@ class FormBox extends React.Component {
                 {...formItemLayout}
                 label="研究时间"
               >
-                {getFieldDecorator('subjecgtTime', {
+                {getFieldDecorator('subjectTime', {
                   
                 })(
                   <RangePicker/>
@@ -352,7 +358,7 @@ class FormBox extends React.Component {
                 label="研究方案"
               >
                 {getFieldDecorator('htmlText', {
-                  rules: [{validator:this.validateHtml}],
+                  rules: [{validator:config.validateHtml}],
                 })(
                   <Ueditor/> //<Editor style={{width:460}}/>
                 )}
@@ -365,9 +371,9 @@ class FormBox extends React.Component {
               </FormItem>
               <FormItem {...submitFormLayout} style={{ marginTop: 32 }}>
                 <Button type="primary" htmlType="submit" loading={submitting}>
-                  提交
+                {this.props.isEdit ? '保存':'新建'}
                 </Button>
-                <Button style={{ marginLeft: 8 }} onClick={this.props.goback}>返回</Button>
+                <Button style={{ marginLeft: 8 }} onClick={this.props.goback}>取消</Button>
               </FormItem>
             </Form>
             <Modal visible={previewVisible} footer={null} onCancel={()=>{this.setState({previewVisible:false})}}>
@@ -383,17 +389,21 @@ export default class SubjectSave extends React.Component {
     state={
         isEdit:false,
         editId:'',
+        isSaved:false,
     }
 
     handleSubmit = (centers,e) => {
         e.preventDefault();
         this.formboxref.validateFieldsAndScroll((err, values) => {      
           if (!err) {
-            values.beginTime =values.subjecgtTime && values.subjecgtTime[0].format(dayFormat)
-            values.endTime = values.subjecgtTime && values.subjecgtTime[1].format(dayFormat)
+            // console.log(values.subjectTime)
+            values.beginTime =values.subjectTime && values.subjectTime[0].format(dayFormat)
+            values.endTime = values.subjectTime && values.subjectTime[1].format(dayFormat)
             values.mainImgName = values.mainImgName.file ? values.mainImgName.file.response.data[0].fileName : values.mainImgName
-            values.subjecgtTime = null
+            values.researchType = values.researchType == 'NON-INTERVENTION' ? 'NON_INTERVENTION' : values.researchType
+            values.subjectTime = null
             values.centers = centers
+            // this.setState({isSaved:true},()=>{this.save(values)})
             this.save(values)
           }
         });
@@ -499,14 +509,14 @@ export default class SubjectSave extends React.Component {
       }
     
     render(){
-        const {isEdit, detail}=this.state
+        const {isEdit, detail, isSaved}=this.state
         const mapPropsToFields = () => (        
             isEdit ?        
               { 
                   researchSubjectTitle:{value:detail.researchSubjectTitle},
                   researchType:{value:detail.researchType ? `${detail.researchType}` : ''},
                   researchSubjectId:{value:detail.researchSubjectId},
-                  subjectTime:{value:[moment(detail.beginTime),moment(detail.endTime)]},
+                  subjectTime:{value:(detail.beginTime&&detail.endTime) && [moment(moment(detail.beginTime).format("YYYY-MM-DD")),moment(moment(detail.endTime).format("YYYY-MM-DD"))]},
                   clinicalTrailStaging:{value:detail.clinicalTrailStaging ? `${detail.clinicalTrailStaging}` : ''},
                   cro:{value:detail.cro},
                   htmlText:{value:detail.htmlText},
@@ -521,6 +531,8 @@ export default class SubjectSave extends React.Component {
               } : null
             )  
           FormBox=Form.create({mapPropsToFields})(FormBox)
-        return( <FormBox ref={el=>{this.formboxref = el}} goback={this.goback} handleSubmit={this.handleSubmit}/> )
+        return( <div>
+          {/* <Prompt when={!isSaved} message="是否确认离开当前编辑页?" /> */}
+        <FormBox isEdit={isEdit} ref={el=>{this.formboxref = el}} goback={this.goback} handleSubmit={this.handleSubmit}/> </div>)
     }
 }

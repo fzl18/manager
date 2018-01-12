@@ -36,7 +36,7 @@ const routes = [{
 }, {
     path: '/index',
     exact: true,
-    render: () => <News />,
+    render: () => <Login />,
 }, {
     path: '/index/news',
     exact: true,

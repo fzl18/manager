@@ -132,10 +132,13 @@ class FormBox extends React.Component {
                 })(
                   <Upload
                     action={uploadser}
+                    accept={config.imgType}
+                    beforeUpload={config.beforeUpload}
                     listType="picture-card"
                     fileList={fileList}
                     onPreview={this.handlePreview}
                     onChange={this.handleChange}
+                    onRemove={config.imgRemove}
                   >
                     {fileList.length >= 1 ? null : uploadButton}
                   </Upload>              
@@ -223,9 +226,9 @@ state = {
     });
     const options ={
         method: 'POST',
-        url: API_URL.index.queryLastTendencyList,
+        url: API_URL.arrangement.queryDoctorGroup,
         data: {
-            offset: 1,
+            offset: pagination.current || 1,
             limit: pagination.pageSize,
             ...params,
         },
@@ -467,8 +470,30 @@ state = {
     $.sendRequest(options)
   }
 
-  toggle=()=>{
-
+  toggle = (id,isArranged) => {
+    const options = {
+      method: 'POST',
+      url: API_URL.arrangement.enableScheduling,
+      data: {
+          offset: 1,
+          limit: 1,
+          doctorGroupId:id,
+          isArranged:isArranged ? 0 : 1
+      },
+      dataType: 'json',
+      doneResult: data => {
+          if (!data.error) {
+              notification['success']({
+                  message: data.success,
+                  description: '',
+                })
+              this.loadListData()
+          } else {
+              Modal.error({ title: data.error });
+          }            
+      }
+    }
+  $.sendRequest(options)
   }
 
   changeModalView = (modalName,isShow,type,callback) => {    
@@ -499,25 +524,26 @@ state = {
       },
       {
         title: '医生组名称',
-        dataIndex: 'lastTendencyTitle',
+        dataIndex: 'groupName',
         width:500
       },
       {
         title: '是否启用排班',
-        dataIndex: 'createTimeString',
+        dataIndex: 'isArranged',
         sorter: true,
-        width:200
+        width:200,
+        render:(text,record)=>(record.isArranged ? '启用':'未启用')        
       },      
       {
         title: '操作',
         width:150,
         render: (text,record,index) => (
           <div style={{textAlign:'center'}}>
-            { record.acc ?
-            <Popconfirm title="是否确认关闭排班？关闭后只本组医生都能回复患者咨询问题." onConfirm={()=>{this.toggle(record.id)}} okText="是" cancelText="否">
+            {record.isArranged ?
+            <Popconfirm title="是否确认关闭排班？关闭后只本组医生都能回复患者咨询问题." onConfirm={()=>{this.toggle(record.id,record.isArranged)}} okText="是" cancelText="否">
             <a href="javascript:;" >关闭排班</a>
             </Popconfirm> :
-            <Popconfirm title="是否确认启用排班？启用后只有排班人员在排班时间内才能回复患者咨询问题." onConfirm={()=>{this.toggle(record.id)}} okText="是" cancelText="否">
+            <Popconfirm title="是否确认启用排班？启用后只有排班人员在排班时间内才能回复患者咨询问题." onConfirm={()=>{this.toggle(record.id,record.isArranged)}} okText="是" cancelText="否">
             <a href="javascript:;" >启用排班</a>
             </Popconfirm>
             }
@@ -532,7 +558,7 @@ state = {
     listData.map((d,i)=>{
         let list = {
             index: ((pagination.current - 1) || 0) * pagination.pageSize + i + 1,
-            id:d.lastTendencyId,
+            id:d.doctorGroupId,
             ...d,
         }
         lists.push(list)

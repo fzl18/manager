@@ -88,7 +88,7 @@ class SortList extends Component {
         const items = this.state.items;
         let str='';
         items.map(function(val,index){
-            str += `params[${val.key}]=${index}&`;
+            str += `params[${val.key}]=${index + 1}&`;
         })
         this.sendDegreeSort(str);
     }

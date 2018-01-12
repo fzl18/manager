@@ -5,19 +5,19 @@ export const menuList = [
         children:[
             {
                 name:"最新动态",
-                path:"#/index/news"
+                path:"#/index/news",
             },
             {
                 name:"学术会议",
-                path:"#/index/meet"
+                path:"#/index/meet",
             },
             {
                 name:"研究课题",
-                path:"#/index/subject"
+                path:"#/index/subject",
             },
             {
                 name:"首页轮播",
-                path:"#/index/carousel"
+                path:"#/index/carousel",
             },
         ]
     },
@@ -27,11 +27,11 @@ export const menuList = [
         children:[
             {
                 name:"科室管理",
-                path:"#/team/department"
+                path:"#/team/department",
             },
             {
                 name:"医生管理",
-                path:"#/team/doctor"
+                path:"#/team/doctor",
             }
         ]
     },
@@ -41,28 +41,28 @@ export const menuList = [
         children:[
             {
                 name:"分类管理",
-                path:"#/education/class"
+                path:"#/education/class",
             },
             {
                 name:"文章管理",
-                path:"#/education/detail"
+                path:"#/education/detail",
             }
         ]
     },
     {
         name:"问题库",
         icon:'icon-biaoqian',
-        path:"#/question"
+        path:"#/question",
     },
     {
         name:"咨询历史",
         icon:'icon-jian',
-        path:"#/consulhistory"
+        path:"#/consulhistory",
     },
     {
         name:"热门咨询",
         icon:'icon-remen',
-        path:"#/consulhot"
+        path:"#/consulhot",
     },
     {
         name:"用户管理",
@@ -70,31 +70,31 @@ export const menuList = [
         children:[
             {
                 name:"患者",
-                path:"#/UserManager/Patients"
+                path:"#/UserManager/Patients",
             },
             {
                 name:"医学助理",
-                path:"#/UserManager/Assistants"
+                path:"#/UserManager/Assistants",
             },
             {
                 name:"医生",
-                path:"#/UserManager/Doctors"
+                path:"#/UserManager/Doctors",
             }
         ]
     },
     {
         name:"服务记录",
         icon:'icon-jilu',
-        path:"#/serive"
+        path:"#/serive",
     },
     {
         name:"咨询排班",
         icon:'icon-zhibananpai',
-        path:"#/arrangement"
+        path:"#/arrangement",
     },
     {
         name:"科研库权限",
         icon:'icon-quanxian',
-        path:"#/auth"
+        path:"#/auth",
     }
 ]

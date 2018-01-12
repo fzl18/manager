@@ -44,21 +44,7 @@ class FormBox extends React.Component {
       this.setState({fileList})
     }
 
-    delHtmlTag = (str)=>{
-      return str.replace(/<[^>]+>/g,"");
-    }
-
-    validateHtml=(rule, value, callback)=>{      
-      if(value){
-        let html = this.delHtmlTag(value)
-        if (html) {
-          callback();
-          return;
-        }
-      }      
-      callback('请输入内容！');
-    }
-    
+   
     componentDidMount(){
       const  { getFieldValue} = this.props.form;
       const departmentMainImg= getFieldValue('departmentMainImgUrl')
@@ -96,11 +82,11 @@ class FormBox extends React.Component {
     render(){
         const { getFieldDecorator, getFieldsValue, setFieldsValue} = this.props.form;
         const { previewVisible, previewImage, submitting, fileList, fileLogo} = this.state;
-        console.log(fileList, fileLogo)
         const uploadButton = (
-          <Button type="primary" size='large'>
-            <Icon type="plus" />选择图片
-          </Button>
+          <div>
+            <Icon type="plus" />
+            <div className="ant-upload-text">上传图片</div>
+          </div>
         );
         const {formItemLayout,submitFormLayout} = config          
         return(
@@ -131,10 +117,13 @@ class FormBox extends React.Component {
                 })(
                   <Upload
                     action={uploadser}
-                    listType="picture"
+                    accept={config.imgType}
+                    beforeUpload={config.beforeUpload}
+                    listType="picture-card"
                     fileList={fileLogo}
                     onPreview={this.handlePreview}
                     onChange={this.handleChange}
+                    onRemove={config.imgRemove}
                   >
                     {fileLogo.length >= 1 ? null : uploadButton}
                   </Upload>              
@@ -152,10 +141,13 @@ class FormBox extends React.Component {
                 })(
                   <Upload
                     action={uploadser}
-                    listType="picture"
+                    accept={config.imgType}
+                    beforeUpload={config.beforeUpload}
+                    listType="picture-card"
                     fileList={fileList}
                     onPreview={this.handlePreview}
                     onChange={this.handleChange2}
+                    onRemove={config.imgRemove}
                   >
                     {fileList.length >= 1 ? null : uploadButton}
                   </Upload>              
@@ -180,7 +172,7 @@ class FormBox extends React.Component {
                 {getFieldDecorator('htmlText', {
                   rules: [{
                     required: true,
-                    validator: this.validateHtml,
+                    validator: config.validateHtml,
                   }],
                 })(
                   <Ueditor/> //<Editor style={{width:460}}/>
@@ -188,7 +180,7 @@ class FormBox extends React.Component {
               </FormItem>
               <FormItem {...submitFormLayout} style={{ marginTop: 32 }}>
                 <Button type="primary" htmlType="submit" loading={submitting}>
-                  提交
+                  保存
                 </Button>
                 {/* <Button style={{ marginLeft: 8 }} onClick={this.props.closeModalView.bind(this,'modalVisible','close')}>取消</Button> */}
               </FormItem>
@@ -231,7 +223,7 @@ state = {
         method: 'POST',
         url: API_URL.index.queryDepartment,
         data: {
-            offset: 1,
+            offset: pagination.current || 1,
             limit: pagination.pageSize,
             ...params,
         },
@@ -403,7 +395,6 @@ state = {
         values.departmentName = values.departmentName;
         values.departmentLogoImg = values.departmentLogoImg.file ? values.departmentLogoImg.file.response.data[0].fileName : values.departmentLogoImg
         values.departmentMainImg = values.departmentMainImg.file ? values.departmentMainImg.file.response.data[0].fileName : values.departmentMainImg
-        values.htmlText = Object.keys(values.htmlText).length && values.htmlText.editorContent
         this.save(values)
       }
     });

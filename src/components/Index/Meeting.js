@@ -3,7 +3,7 @@ import $ from '../../common/AjaxRequest';
 import {Link} from 'react-router-dom'
 import moment from 'moment';
 import API_URL from '../../common/url';
-import { Row, Col, Popconfirm,  Card,Table, Form, Input, Select, Icon, Button, Dropdown, Menu, InputNumber, DatePicker, Modal, message, Upload, notification  } from 'antd';
+import { Row, Col, Popconfirm, Cascader, Card,Table, Form, Input, Select, Icon, Button, Dropdown, Menu, InputNumber, DatePicker, Modal, message, Upload, notification  } from 'antd';
 import Editor from '../common/Editor';
 import Ueditor from '../../common/Ueditor/Ueditor';
 import SelectCitys from '../common/SelectCitys';
@@ -118,10 +118,13 @@ class FormBox extends React.Component {
                 })(
                   <Upload
                     action={uploadser}
+                    accept={config.imgType}
+                    beforeUpload={config.beforeUpload}
                     listType="picture-card"
                     fileList={fileList}
                     onPreview={this.handlePreview}
                     onChange={this.handleChange}
+                    onRemove={config.imgRemove}
                   >
                     {fileList.length >= 1 ? null : uploadButton}
                   </Upload>              
@@ -136,7 +139,7 @@ class FormBox extends React.Component {
                     required: true, message: '请选择时间',
                   }],
                 })(
-                  <RangePicker showTime format="YYYY-MM-DD HH:mm:ss" />
+                  <RangePicker format="YYYY-MM-DD" />
                 )}
               </FormItem>
               <FormItem
@@ -183,9 +186,7 @@ class FormBox extends React.Component {
 
 class SearchForm extends Component {
     render(){
-        const { getFieldDecorator, getFieldValue } = this.props.form;
-        const locationId = getFieldValue('locationId')
-        const regionName = locationId && locationId.label        
+        const { getFieldDecorator, getFieldValue } = this.props.form
         return (
             <Form onSubmit={this.props.handleSearch} layout="inline">
                 <FormItem label="会议标题">
@@ -195,12 +196,17 @@ class SearchForm extends Component {
                 </FormItem>
                 <FormItem label="会议时间">
                 {getFieldDecorator('meetingTime')(
-                    <RangePicker showTime style={{width:210}} />
+                    <RangePicker style={{width:210}} />
                 )}
                 </FormItem>
                 <FormItem label="会议地点">
-                {getFieldDecorator('locationId')(
-                    <SelectCitys placeholder={regionName}/>
+                {getFieldDecorator('locationId',{                  
+                })(
+                    // <SelectCitys placeholder={regionName} />
+                    <Cascader options={this.props.options}
+                    placeholder='请选地点' 
+                    allowClear
+                    />
                 )}
                 </FormItem>
                 <Button icon="search" type="primary" htmlType="submit" style={{float:'right'}}>查询</Button>
@@ -225,6 +231,7 @@ state = {
     isEdit:false,
     selectedRowKeys: [],
     totalCallNo: 0,
+    options:[],
   };
 
   loadListData = (params) => {
@@ -236,7 +243,7 @@ state = {
         method: 'POST',
         url: API_URL.index.queryMeetingList,
         data: {
-            offset: 1,
+            offset: pagination.current || 1,
             limit: pagination.pageSize,
             ...params,
             meetingTime:null
@@ -262,6 +269,7 @@ state = {
 
   componentDidMount() {
     this.loadListData()
+    this.loadaddress()
   }
 
   componentWillReceiveProps(nextProps) {
@@ -299,7 +307,7 @@ state = {
       offset:pagination.current,
     };
     if (sorter.field) {
-      params.sort = sorter.field;
+      params.sort = sorter.field =="meetingTime" ? "beginTime" : sorter.field;
       params.direction = sorter.order == "descend" ? "DESC" :  "ASC";
 
     }
@@ -360,12 +368,11 @@ state = {
     e.preventDefault();
     this.searchFormRef.validateFields((err, fieldsValue) => {
       if (err) return;
+      console.log(fieldsValue)
       const rangeTimeValue = fieldsValue['meetingTime'] || null;
       fieldsValue.beginTime = rangeTimeValue && Object.keys(rangeTimeValue).length>0 ? rangeTimeValue[0].format('YYYY-MM-DD HH:mm:ss') :null
       fieldsValue.endTime = rangeTimeValue && Object.keys(rangeTimeValue).length>0 ? rangeTimeValue[1].format('YYYY-MM-DD HH:mm:ss') :null
-      fieldsValue.regionId = fieldsValue.locationId && fieldsValue.locationId.value
-      fieldsValue.regionName= fieldsValue.locationId && fieldsValue.locationId.label
-      fieldsValue.locationId = null
+      fieldsValue.regionId = fieldsValue.locationId && fieldsValue.locationId[1]
       const {pagination}=this.state
       pagination.current = 1 
       this.setState({
@@ -382,13 +389,61 @@ state = {
     });
   }
 
+  loadaddress=()=>{
+    const options ={
+      method: 'POST',
+      url: API_URL.common.queryAllProvinceContainCityList,
+      data: {},
+      dataType: 'json',
+      doneResult: data => {
+          if (!data.error) {
+            // const options = [{
+            //   children:[{
+            //     value:'1',
+            //     label:'xx'
+            //   }],
+            //   value:'2',
+            //   label:'xxx'
+            // },{
+            //   children:[{
+            //     value:'3',
+            //     label:'xx'
+            //   }],
+            //   value:'4',
+            //   label:'xxx'
+            // }]     
+            const options = []            
+            data.data.map(d=>{
+              let children = []
+              d.children.map(v=>{
+                children.push({
+                  value:`${v.regionId}`,
+                  label:v.regionName,
+                })
+              })             
+              options.push({
+                value:`${d.regionId}`,
+                label:d.regionName,
+                children:children,
+              })
+            })
+            // console.log(options)
+            this.setState({options})
+          } else {
+              Modal.error({ title: data.error });
+          }            
+      }
+    }
+    $.sendRequest(options)
+  }
+
 // ********************************
   renderSearchForm() {
-    const { selectedRows, searchFormValues } = this.state;
+    const { selectedRows, searchFormValues,options } = this.state;
     const mapPropsToFields = () => ({ 
         meetingTitle:{value:searchFormValues.meetingTitle},
         regionName:{value:searchFormValues.regionName},
-        locationId:{value:{value:searchFormValues.regionId,label:searchFormValues.regionName}},
+        locationId:{value:searchFormValues.locationId},
         // meetingTime:{value: searchFormValues.beginTime && [moment(searchFormValues.beginTime),moment(searchFormValues.endTime)]},
         meetingTime:{value: searchFormValues.meetingTime},
           })
@@ -396,7 +451,7 @@ state = {
     return (
         <Row gutter={2}>
             <Col md={22} sm={24} >
-                <SearchForm handleSearch={this.handleSearch} ref = { el => {this.searchFormRef = el}}/>
+                <SearchForm options={options} handleSearch={this.handleSearch} ref = { el => {this.searchFormRef = el}}/>
             </Col>
             <Col md={2} sm={8} style={{textAlign:'right'}}>            
             {
@@ -528,28 +583,35 @@ state = {
       {
         title: '序号',
         dataIndex: 'index',
+        width:60,
       },
       {
         title: '会议标题',
         dataIndex: 'meetingTitle',
+        width:200,
       },
       {
         title: '会议时间',
         dataIndex: 'meetingTime',
         sorter: true,
+        width:180,
       }, 
       {
         title: '会议地点',
         dataIndex: 'location',
         sorter: true,
+        width:100,
+        render:(text,record)=> `${record.province} / ${record.location}`
       },      
       {
         title: '创建时间',
         dataIndex: 'createTime', 
         sorter: true,
+        width:130,
       },      
       {
         title: '操作',
+        width:100,
         render: (text,record,index) => (
           <div>
             <Link  to={`/index/meetsave/${record.id}`}>修改</Link>
@@ -593,7 +655,7 @@ state = {
             mainImgUrl:{value:detail.mainImgUrl},
             locationId:{value:{value:detail.locationId,label:detail.location}},
             meetingTime:{value:[moment(detail.beginTime),moment(detail.endTime)]},
-             htmlText:{value:detail.htmlText},
+            htmlText:{value:detail.htmlText},
         } : null
       ) 
     FormBox=Form.create({mapPropsToFields})(FormBox)

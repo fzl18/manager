@@ -1,8 +1,56 @@
 import API_URL from '../../common/url';
+import {Modal} from 'antd';
+const confirm = Modal.confirm
 export const config={
     pageSize:15, // 表格数据分页数
     scroll:{x:1200,y:310}, //表格框大小，超出显示滚动条
     listLength:8, // 表格滚动条出现条件
+    imgType:'.jpg, .png, .gif',//支持上传图片格式
+    beforeUpload:(file)=>{       //限制上传图片大小
+      const maxSize = 5  // 允许上传最大图片大小(M)
+      const size = file.size / 1024 / 1024 < maxSize;
+      if (!size) {
+        Modal.warning({
+          title: `上传的图片必须小于${maxSize}M!`,
+          content: '',
+        })
+      }
+      return size
+    },
+    imgRemove:()=>{ //删除图片再次确认
+      return new Promise(
+        (resolve)=>{
+          confirm({
+            title: '确定要删除图片吗?',
+            content: '',
+            okText: '是',
+            okType: 'danger',
+            cancelText: '否',
+            onOk() {
+              resolve(true)
+            },
+            onCancel() {
+              resolve(false)
+            },
+          })
+        }        
+      )      
+    },
+    validateHtml:(rule, value, callback)=>{ //验证富文本输入
+      const maxTxtLength = 10000 //限制输入最大字数(包含图片)
+      if(value){
+        let imgLength = value.split('<img').length -1
+        let html = value.replace(/<[^>]+>/g,"")
+        if(html.length + imgLength <= maxTxtLength){          
+            callback()
+            return
+        }else{
+          callback(`内容不能超过${maxTxtLength}字符！`)
+          return
+        }
+      }
+      callback('请输入内容！')
+    },
     formItemLayout:{   //表单样式，响应式
         labelCol: {
           xs: { span: 24 },

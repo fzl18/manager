@@ -1,8 +1,9 @@
 import React, {Component} from 'react';
 import $ from '../../common/AjaxRequest';
+import { Prompt } from 'react-router-dom'
 import moment from 'moment';
 import API_URL from '../../common/url';
-import { Row, Col, Popconfirm,  Card,Table, Form, Input, Select, Icon, Button, Dropdown, Menu, InputNumber, DatePicker, Modal, message, Upload, notification  } from 'antd';
+import { Row, Col, Popconfirm, Cascader, Card,Table, Form, Input, Select, Icon, Button, Dropdown, Menu, InputNumber, DatePicker, Modal, message, Upload, notification  } from 'antd';
 import Editor from '../common/Editor';
 import Ueditor from '../../common/Ueditor/Ueditor';
 import SelectCitys from '../common/SelectCitys';
@@ -20,8 +21,40 @@ class FormBox extends React.Component {
         previewVisible: false,
         previewImage:'',
         fileList:[],
+        options:[],
     }
 
+    loadaddress=()=>{
+      const options ={
+        method: 'POST',
+        url: API_URL.common.queryAllProvinceContainCityList,
+        data: {},
+        dataType: 'json',
+        doneResult: data => {
+          if (!data.error) {
+            const options = []            
+            data.data.map(d=>{
+              let children = []
+              d.children.map(v=>{
+                children.push({
+                  value:`${v.regionId}`,
+                  label:v.regionName,
+                })
+              })             
+              options.push({
+                value:`${d.regionId}`,
+                label:d.regionName,
+                children,
+              })
+            })
+            this.setState({options})
+            } else {
+                Modal.error({ title: data.error });
+            }            
+        }
+      }
+    $.sendRequest(options)
+    }
     handlePreview = (file) => {
         this.setState({
           previewImage: file.url || file.thumbUrl,
@@ -53,6 +86,7 @@ class FormBox extends React.Component {
     }
     
     componentDidMount(){
+      this.loadaddress()
       const  { getFieldValue} = this.props.form;
       const imgUrl= getFieldValue('mainImgUrl')
       const fileList = getFieldValue('mainImgUrl') ? [{
@@ -79,9 +113,7 @@ class FormBox extends React.Component {
 
     render(){
         const { getFieldDecorator, getFieldValue, setFieldsValue} = this.props.form;
-        const { previewVisible, previewImage, submitting, fileList} = this.state;
-        const locationId = getFieldValue("locationId")
-        const location = locationId && locationId.label
+        const { previewVisible, previewImage, submitting, fileList,options} = this.state;
         const uploadButton = (
           <div>
             <Icon type="plus" />
@@ -117,14 +149,17 @@ class FormBox extends React.Component {
                 })(
                   <Upload
                     action={uploadser}
+                    accept={config.imgType}
+                    beforeUpload={config.beforeUpload}
                     listType="picture-card"
                     fileList={fileList}
                     onPreview={this.handlePreview}
                     onChange={this.handleChange}
+                    onRemove={config.imgRemove}
                   >
                     {fileList.length >= 1 ? null : uploadButton}
-                  </Upload>              
-                )}
+                  </Upload>                  
+                )}<div style={{color:'#bbb'}}>（图片小于5M，最佳尺寸174*116px）</div>
               </FormItem>
               <FormItem
                 {...formItemLayout}
@@ -135,7 +170,7 @@ class FormBox extends React.Component {
                     required: true, message: '请选择时间',
                   }],
                 })(
-                  <RangePicker showTime format="YYYY-MM-DD HH:mm:ss" placeholder={['开始时间','结束时间']}/>
+                  <RangePicker showTime format="YYYY-MM-DD HH:mm" placeholder={['开始时间','结束时间']}/>
                 )}
               </FormItem>
               <FormItem
@@ -147,10 +182,14 @@ class FormBox extends React.Component {
                     required: true, message: '请选择地点',
                   }],
                 })(
-                    <SelectCitys style={{width:150}} placeholder={location} 
+                    // <SelectCitys style={{width:150}} placeholder={location} 
                     // defaultValue={locationId}
                     // ChangeSelectprovinces ={this.ChangeSelectprovinces}
                     // ChangeSelect = {this.handleChangeSelect.bind(this, 'workCityId')}
+                    // />
+                    <Cascader options={options} style={{width:200}}
+                    placeholder='请选地点' 
+                    allowClear
                     />
                 )}
               </FormItem>
@@ -159,16 +198,16 @@ class FormBox extends React.Component {
                 label="内容"
               >
                 {getFieldDecorator('htmlText', {
-                  rules: [{required: true,validator:this.validateHtml}],
+                  rules: [{required: true,validator:config.validateHtml}],
                 })(
                   <Ueditor/> //<Editor style={{width:460}}/>
                 )}
               </FormItem>
               <FormItem {...submitFormLayout} style={{ marginTop: 32 }}>
                 <Button type="primary" htmlType="submit" loading={submitting}>
-                  提交
+                {this.props.isEdit ? '保存':'新建'}
                 </Button>
-                <Button style={{ marginLeft: 8 }} onClick={this.props.goback}>返回</Button>
+                <Button style={{ marginLeft: 8 }} onClick={this.props.goback}>取消</Button>
               </FormItem>
             </Form>
             <Modal visible={previewVisible} footer={null} onCancel={()=>{this.setState({previewVisible:false})}}>
@@ -184,6 +223,7 @@ export default class MeetSave extends React.Component {
     state={
         isEdit:false,
         editId:'',
+        isSaved:false
     }
 
     handleSubmit = (e) => {
@@ -191,13 +231,14 @@ export default class MeetSave extends React.Component {
         this.formboxref.validateFieldsAndScroll((err, values) => { 
             const rangeTimeValue = values['meetingTime'];
           if (!err) {
-            values.regionId = values.locationId ? values.locationId.value : null
+            values.regionId = values.locationId ? values.locationId[1] : null
+            values.provinceId = values.locationId ? values.locationId[0] : null
             values.mainImgName = values.mainImgName.file ? values.mainImgName.file.response.data[0].fileName : values.mainImgName
-            values.beginTime = rangeTimeValue[0].format('YYYY-MM-DD HH:mm:ss')
-            values.endTime = rangeTimeValue[1].format('YYYY-MM-DD HH:mm:ss')
-             
+            values.beginTime = rangeTimeValue[0].format('YYYY-MM-DD HH:mm')
+            values.endTime = rangeTimeValue[1].format('YYYY-MM-DD HH:mm')
             values.locationId=null
             values.meetingTime=null
+            // this.setState({isSaved:true},()=>{this.save(values)})
             this.save(values)
           }
         });
@@ -286,7 +327,7 @@ export default class MeetSave extends React.Component {
     }
 
     render(){
-        const {isEdit, detail}=this.state
+        const {isEdit, detail,isSaved}=this.state
         const mapPropsToFields = () => (        
             isEdit ?        
               { 
@@ -294,12 +335,14 @@ export default class MeetSave extends React.Component {
                   meetingTitle:{value:detail.meetingTitle},
                   mainImgName:{value:detail.mainImgName},
                   mainImgUrl:{value:detail.mainImgUrl},
-                  locationId:{value:{value:detail.locationId,label:detail.location}},
+                  locationId:{value:[`${detail.provinceId}`,`${detail.locationId}`]},
                   meetingTime:{value:[moment(detail.beginTime),moment(detail.endTime)]},
                    htmlText:{value:detail.htmlText},
               } : null
             )
           FormBox=Form.create({mapPropsToFields})(FormBox)
-        return( <FormBox ref={el=>{this.formboxref = el}} goback={this.props.history.goBack} handleSubmit={this.handleSubmit}/> )
+        return( <div>
+          {/* <Prompt when={!isSaved} message="是否确认离开当前编辑页?" /> */}
+        <FormBox isEdit={isEdit} ref={el=>{this.formboxref = el}} goback={this.props.history.goBack} handleSubmit={this.handleSubmit}/> </div>)
     }
 }

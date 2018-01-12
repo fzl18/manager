@@ -45,19 +45,13 @@ class FormBox extends React.Component {
       this.setState({fileList})
     }
   
-    delHtmlTag = (str)=>{
-      return str.replace(/<[^>]+>/g,"");
-    }
-  
-    validateHtml=(rule, value, callback)=>{      
-      if(value){
-        let html = this.delHtmlTag(value)
-        if (html) {
-          callback();
-          return;
-        }
+
+    userIdValidator=(rule, value, callback)=>{
+      if(typeof value == 'number' || value && value.key){
+        callback();
+        return;        
       }      
-      callback('请输入内容！');
+      callback('请选择医生账号');
     }
     
     componentDidMount(){
@@ -90,14 +84,31 @@ class FormBox extends React.Component {
       callback('请添加图片');
     }
   
-    handleSelect=(v)=>{    
+    handleSelect=(v)=>{
+      const { form } = this.props
       this.state.sourceData.map(data => {
         if(data.userId == v.key){
           this.setState({
             doctorName:data.userCompellation
           })
+          form.setFieldsValue({
+            doctor:{name:data.userCompellation,id:data.userId}
+          });
         }
       })    
+    }
+
+    selectChange=(value)=>{
+      const { form } = this.props
+      if(!value.key){
+        this.setState({
+          doctorName:''
+        })
+        // let userId = form.getFieldValue('userId')
+        form.setFieldsValue({
+          userId:null
+        });
+      }
     }
   
     parserDataDoctor = dt => {
@@ -123,7 +134,8 @@ class FormBox extends React.Component {
     render(){
         const { getFieldDecorator, getFieldValue, setFieldsValue,getFieldsValue} = this.props.form;
         const { previewVisible, previewImage, submitting, fileList,doctorList,doctorName} = this.state;
-        const userName = getFieldValue('userName') 
+        const userName = getFieldValue('userName')
+        const doctor = getFieldDecorator('doctor') || ''
         const uploadButton = (
           <div>
             <Icon type="plus" />
@@ -141,7 +153,8 @@ class FormBox extends React.Component {
               >
                 {getFieldDecorator('userId', {
                   rules: [{
-                    required: true, message: '请选择',
+                    required: true, message: '请选择医生账号',
+                    validator:this.userIdValidator
                   }],
                 })(
                   <SearchSelect url={API_URL.usermanager.queryDoctorByHospitalDepartmentId} sourceData={doctorList}
@@ -150,6 +163,7 @@ class FormBox extends React.Component {
                     parserData={this.parserDataDoctor}
                     handleSelect={this.handleSelect}
                     disabled = {this.props.disabled}
+                    onChange={this.selectChange}
                     placeholder={ userName || " 输入手机号码" }/>
                 )}
               </FormItem>
@@ -171,10 +185,13 @@ class FormBox extends React.Component {
                 })(
                   <Upload
                     action={uploadser}
+                    accept={config.imgType}
+                    beforeUpload={config.beforeUpload}
                     listType="picture-card"
                     fileList={fileList}
                     onPreview={this.handlePreview}
                     onChange={this.handleChange}
+                    onRemove={config.imgRemove}
                   >
                     {fileList.length >= 1 ? null : uploadButton}
                   </Upload>              
@@ -216,7 +233,7 @@ class FormBox extends React.Component {
                 {getFieldDecorator('htmlText', {
                   rules: [{
                     required: true,
-                    validator: this.validateHtml,
+                    validator: config.validateHtml,
                   }],
                 })(
                   <Ueditor/> //<Editor style={{width:460}}/>
@@ -224,9 +241,9 @@ class FormBox extends React.Component {
               </FormItem>
               <FormItem {...submitFormLayout} style={{ marginTop: 32 }}>
                 <Button type="primary" htmlType="submit" loading={submitting}>
-                  提交
+                {this.props.isEdit ? '保存':'新建'}
                 </Button>
-                <Button style={{ marginLeft: 8 }} onClick={this.props.goback}>返回</Button>
+                <Button style={{ marginLeft: 8 }} onClick={this.props.goback}>取消</Button>
               </FormItem>
             </Form>
             <Modal visible={previewVisible} footer={null} onCancel={()=>{this.setState({previewVisible:false})}}>
@@ -246,13 +263,14 @@ export default class DoctorSave extends React.Component {
 
     handleSubmit = (e) => {
         e.preventDefault();
-        this.formboxref.validateFieldsAndScroll((err, values) => {      
+        this.formboxref.validateFieldsAndScroll((err, values) => {  
           if (!err) {
-             
-            // values.doctorImgName = values.doctorImgName.file ? values.doctorImgName.file.response.data[0].fileName : values.doctorImgName
-            values.doctorImgName = "ddds.png"
-            values.userId = values.userId.key || values.userId
-            console.log(values)
+            values.doctorImgName = values.doctorImgName.file ? values.doctorImgName.file.response.data[0].fileName : values.doctorImgName
+            values.ydataUuId = values.userId.key || values.userId
+            if(!values.ydataUuId || !values.doctor || values.doctor.id != values.ydataUuId){
+              message.warn('医生账号选择有误，请检查！')
+              return
+            }
             this.save(values)
           }
         });
@@ -265,7 +283,7 @@ export default class DoctorSave extends React.Component {
             url: isEdit ? API_URL.index.modifyDepartmentDoctor :  API_URL.index.addDepartmentDoctor,
             data: {
                 ...params,
-                ydataUuid: isEdit ? editId : null
+                ydataUuId: isEdit ? editId : null
             },
             dataType: 'json',
             doneResult: data => {
@@ -348,7 +366,7 @@ export default class DoctorSave extends React.Component {
             isEdit ?        
               { 
                   userCompellation:{value:detail.userCompellation},
-                  userId:{value:detail.userId},
+                  userId:{value:detail.ydataAccountId},
                   userName:{value:detail.userName},
                   doctorImgName:{value:detail.doctorImgName},
                   doctorImgUrl:{value:detail.doctorImgUrl},
@@ -358,6 +376,6 @@ export default class DoctorSave extends React.Component {
               } : null
             ) 
           FormBox=Form.create({mapPropsToFields})(FormBox)
-        return( <FormBox disabled={isEdit} ref={el=>{this.formboxref = el}} goback={this.props.history.goBack} handleSubmit={this.handleSubmit}/> )
+        return( <FormBox isEdit={isEdit} disabled={isEdit} ref={el=>{this.formboxref = el}} goback={this.props.history.goBack} handleSubmit={this.handleSubmit}/> )
     }
 }

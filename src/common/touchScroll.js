@@ -1,7 +1,6 @@
 function TouchScroll(cfg){
 	this.cfg=this.parseArgs(cfg);
 	this.container=typeof this.cfg.id=='string'?this.$(this.cfg.id):this.cfg.id;
-	console.log(this.container)
 	try{
 		if(!this.container)throw new Error("Can't find element");
 		for(var i=0,j=this.instances.length;i<j;i++)

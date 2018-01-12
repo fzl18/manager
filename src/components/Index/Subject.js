@@ -249,6 +249,8 @@ class FormBox extends React.Component {
                 })(
                   <Upload
                     action={uploadser}
+                    accept={config.imgType}
+                    beforeUpload={config.beforeUpload}
                     listType="picture-card"
                     fileList={fileList}
                     onPreview={this.handlePreview}
@@ -422,20 +424,20 @@ class SearchForm extends Component {
                 </FormItem>
                 <FormItem label="研究类型">
                 {getFieldDecorator('researchType')(
-                    <Select allowClear style={{width:100}}>
+                    <Select allowClear style={{width:100}} placeholder="请选择">
                         <Option value='INTERVENTION'>干预</Option>
-                        <Option value='NON-INTERVENTION'>非干预</Option>
+                        <Option value='NON_INTERVENTION'>非干预</Option>
                     </Select>
                 )}
                 </FormItem>
                 <FormItem label="研究时间">
                 {getFieldDecorator('subjecgtTime')(
-                    <RangePicker style={{width:210}} />
+                    <RangePicker style={{width:200}} />
                 )}
                 </FormItem>
                 <FormItem label="研究状态">
                 {getFieldDecorator('researchStatus')(
-                    <Select allowClear style={{width:100}}>
+                    <Select allowClear style={{width:100}} placeholder="请选择">
                         <Option value='PREPARING '>准备中</Option>
                         <Option value='INTO'>入组中</Option>
                         <Option value='IN'>入组完成</Option>
@@ -477,7 +479,7 @@ state = {
         method: 'POST',
         url: API_URL.index.queryResearchSubjectList,
         data: {
-            offset: 1,
+            offset: pagination.current || 1,
             limit: pagination.pageSize,
             ...params,
         },
@@ -654,11 +656,11 @@ state = {
     e.preventDefault();
     this.formboxref.validateFieldsAndScroll((err, values) => {      
       if (!err) {
-        // console.log(values)
+        console.log(values.researchType)
         values.beginTime =values.subjecgtTime && values.subjecgtTime[0].format(dayFormat)
         values.endTime = values.subjecgtTime && values.subjecgtTime[1].format(dayFormat)
         values.mainImgName = values.mainImgName.file ? values.mainImgName.file.response.data[0].fileName : values.mainImgName
-        values.htmlText = values.htmlText && values.htmlText.editorContent 
+        values.researchType = values.researchType == 'NON-INTERVENTION' ? 'NON_INTERVENTION' : values.researchType
         values.subjecgtTime = null
         values.centers=null
         this.save(values)
@@ -788,7 +790,7 @@ state = {
       {
         title: '研究类型',
         dataIndex: 'researchType',
-        width:80,
+        width:100,
         sorter: true,
         render: (text,record,index) => (
             record.researchType ==='INTERVENTION' ?
@@ -800,14 +802,16 @@ state = {
       {
         title: '研究开始时间',
         dataIndex: 'beginTime',
-        width:150,
+        width:130,
         sorter: true,
+        render:(text,record)=> record.beginTime && moment(record.beginTime).format("YYYY-MM-DD")
       },      
       {
         title: '研究结束时间',
         dataIndex: 'endTime', 
-        width:150,
+        width:130,
         sorter: true,
+        render:(text,record)=> record.endTime && moment(record.endTime).format("YYYY-MM-DD")
       },      
       {
         title: '研究状态',

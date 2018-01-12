@@ -69,7 +69,7 @@ class FormBox extends React.Component {
                   }],
                 })(
                 <div>
-                  <SearchSelect sourceData={[]} style={{width:200}} /> <Button type="primary" style={{ marginLeft: 8 }} onClick={()=>{}}>添加</Button>
+                  <SearchSelect sourceData={[]} style={{width:130}} /><Button type="primary" style={{ position:'relative',top:-1,left:-1 }} onClick={()=>{}}>添加</Button>
                 </div>
                 )}
               </FormItem>
@@ -78,7 +78,7 @@ class FormBox extends React.Component {
               </FormItem>              
               <FormItem {...submitFormLayout} style={{ marginTop: 32 }}>
                 <Button type="primary" htmlType="submit" loading={submitting}>
-                  提交
+                {this.props.isEdit ? '保存':'新建'}
                 </Button>
                 <Button style={{ marginLeft: 8 }} onClick={this.props.closeModalView.bind(this,'modalVisible','close')}>取消</Button>
               </FormItem>
@@ -136,7 +136,7 @@ state = {
         method: 'POST',
         url: API_URL.index.queryLastTendencyList,
         data: {
-            offset: 1,
+            offset:pagination.current || 1,
             limit: pagination.pageSize,
             ...params,
         },
@@ -412,23 +412,23 @@ state = {
       {
         title: '科研库名称',
         dataIndex: 'lastTendencyTitle',
-        width:500
+        width:250
       },
       {
         title: '搜索条件',
         dataIndex: 'createTimeString',
-        width:200
+        width:100
       },
       {
         title: '可访问医生',
         dataIndex: 'doctor',
-        width:200
+        width:100
       }, 
       {
         title: '操作',
-        width:150,
+        width:100,
         render: (text,record,index) => (
-          <div style={{textAlign:'center'}}>           
+          <div>           
             <a href='javascript:;' onClick={this.setAuth.bind(this,record.id)}>设置权限</a>
           </div>
         ),
@@ -485,12 +485,12 @@ state = {
             <Modal
                 title='设置权限'
                 visible={setAuthModalVisible}
-                width={800}
+                width={500}
                 onOk={this.changeModalView.bind(this,'setAuthModalVisible','close')}
                 onCancel={this.changeModalView.bind(this,'setAuthModalVisible','close')}
                 footer={null}
             >
-               <FormBox ref={el=>{this.formboxref = el}} closeModalView={this.changeModalView.bind(this,'setAuthModalVisible','close')} handleSubmit={this.handleSubmit}/>
+               <FormBox isEdit={isEdit} ref={el=>{this.formboxref = el}} closeModalView={this.changeModalView.bind(this,'setAuthModalVisible','close')} handleSubmit={this.handleSubmit}/>
             </Modal>
       </div>
     );

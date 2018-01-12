@@ -1,8 +1,8 @@
 import React from "react";
 import moment from "moment";
-import {message, Breadcrumb, Modal, Button, Table, DatePicker,Tag,Icon} from "antd";
+import {message, Breadcrumb, Modal, Button, Table, DatePicker,Tag,Icon,Popconfirm,TimePicker,notification} from "antd";
 import API_URL from "../../common/url";
-import AjaxRequest from "../../common/AjaxRequest";
+import $ from "../../common/AjaxRequest";
 import {config,uploadser} from '../common/config';
 
 const { MonthPicker, RangePicker } = DatePicker;
@@ -22,36 +22,68 @@ export default class ArrangeDetail extends React.Component {
         weekStart: moment().subtract(moment().day() - 1,'days'),
         weekEnd: moment().add( 7- moment().day() ,'days'),
         dataList: [],
+        timeVisible:false,
+        editId:null,
+        dayIndex:null,
+        beginTime:null,
+        endTime:null,
     };
 
     getColumns =()=>{
-        const { curManhour,curSite,curPro } = this.state;
+        const {weekStart} = this.state;
+        let begin = weekStart.format("YYYY-MM-DD")
         const columns = [
             {
                 title: '序号',
                 dataIndex: 'index',
+                width:60,
             },{
                 title: '医生姓名',
                 dataIndex: 'doctorName',
+                width:120,
             }];
-
-            columns.push({
-                title: '项目名称',
-                dataIndex: 'investigationName',
-            });
+        for(let i=0;i<7;i++){
+                columns.push({
+                    title: moment(begin).add(i,'days').format("YYYY-MM-DD") ,
+                    dataIndex:`time${i}`,
+                    key:`time${i}`,
+                    width:100,
+                    render:(text,record)=>
+                      <div style={{textAlign:'center'}}>
+                      {
+                        record[`time${i}`].map((d,i)=><div key={i}>{d.schedulingTime} <Popconfirm title="确定要删除?" onConfirm={this.del.bind(this,d.schedulingDetailsId)} onCancel={()=>{}} okText="是" cancelText="否">
+                        <a href="javascript:;"><Icon type="close" style={{color:'red'}}/></a></Popconfirm></div>)
+                      }
+                      <div key={i}><a href="javascript:;" onClick={()=>{this.setState({editId:record.id,dayIndex:i,timeVisible:true,t1:'',t2:''})}}><Icon type="plus-circle" /></a></div>
+                      </div>
+                });
+            }
+            
         return columns;
     };
 
     getDataSource =()=>{
+        const {listData,pagination,weekStart}=this.state
         const sites=[]
-        // listData.map((d,i)=>{
-        //     let list = {
-        //         index: ((pagination.current - 1) || 0) * pagination.pageSize + i + 1,
-        //         id:d.Id,
-        //         ...d,
-        //     }
-        //     sites.push(list)
-        // })
+        let begin = weekStart.format("YYYY-MM-DD")
+        listData && listData.map((d,i)=>{
+            let times={}
+            for(let k=0;k<7;k++){
+                times[`time${k}`]=[]
+                d.schedulingDetailsList.map(v=>{
+                    moment(begin).add(k,'days').format("YYYY-MM-DD") == moment(v.schedulingBeginTime).format("YYYY-MM-DD") ?
+                    times[`time${k}`].push({schedulingTime:v.schedulingTime,schedulingDetailsId:v.schedulingDetailsId}) : null
+                })
+            }            
+            let list = {
+                index: ((pagination.current - 1) || 0) * pagination.pageSize + i + 1,
+                id:d.doctorGroupMemberId,
+                doctorName:d.ydataAccount.ydataAccountCompellation,
+                ...d,
+                ...times,
+            }
+            sites.push(list)
+        })
         return sites;
     };
 
@@ -59,15 +91,18 @@ export default class ArrangeDetail extends React.Component {
         const {weekStart,curweek,weekEnd,pagination} = this.state
         this.setState({loading:true})
         const options = {
-            method: 'get',
-            url: API_URL.index.queryLastTendencyList,
+            method: 'POST',
+            url: API_URL.arrangement.querySchedulingDetails,
             data: {
+                id:this.props.match.params.id,
+                begin:weekStart.format('YYYY-MM-DD'),
+                end:weekEnd.format('YYYY-MM-DD'),
                 ...params
             },
             type: 'json',
             doneResult: data => {
                 if (!data.error) {
-                    const listData = data.datas || data.data;
+                    const listData = data.doctorGroupMembers;
                     pagination.total = data.totalCount;
                     this.setState({
                         loading: false,
@@ -80,28 +115,81 @@ export default class ArrangeDetail extends React.Component {
                 this.setState({loading:false})
             }
         };
-        AjaxRequest.sendRequest(options);
+        $.sendRequest(options);
+    }
+
+    
+    add=()=>{
+      const {editId,beginTime,endTime,dayIndex,weekStart,t1,t2}=this.state
+      const startDay = weekStart.format("YYYY-MM-DD")
+      if( !beginTime || !endTime){ message.warn('时间段不能为空！'); return }
+      if(t1.isAfter(t2)){ message.warn('开始时间不能晚于结束时间！'); return }
+      const options = {
+        method: 'get',
+        url: API_URL.arrangement.addScheduling,
+        data: {
+            doctorGroupMemberId:editId,
+            schedulingBeginTime: `${moment(startDay).add(dayIndex,'days').format("YYYY-MM-DD")} ${beginTime}`,
+            schedulingEndTime:`${moment(startDay).add(dayIndex,'days').format("YYYY-MM-DD")} ${endTime}`,
+        },
+        dataType: 'json',
+        doneResult: data => {
+            if (!data.error) {
+                notification['success']({
+                    message: data.success,
+                    description: '',
+                  })
+                this.setState({timeVisible:false})
+                this.loadData()
+            } else {
+                Modal.error({ title: data.error });
+            }            
+        }
+      }
+    $.sendRequest(options)
+    }
+
+    del=(id)=>{
+      const options = {
+        method: 'POST',
+        url: API_URL.arrangement.removeScheduling,
+        data: {
+            offset: 1,
+            limit: 1,
+            schedulingDetailsId:id,
+        },
+        dataType: 'json',
+        doneResult: data => {
+            if (!data.error) {
+                notification['success']({
+                    message: data.success,
+                    description: '',
+                  })
+                this.loadData()
+            } else {
+                Modal.error({ title: data.error });
+            }            
+        }
+      }
+    $.sendRequest(options)
+    }
+
+    beginTimeChange=(time, timeString)=>{
+      this.setState({beginTime:timeString,t1:time})
+    }
+    endTimeChange=(time, timeString)=>{        
+      this.setState({endTime:timeString,t2:time})
     }
 
     onChange = (d,dateString) => {
-        if(!d){
-            this.setState({
-                curweek: moment(),
-                weekStart: moment().subtract(moment().day() - 1,'days'),
-                weekEnd: moment().add( 7- moment().day() ,'days'),
-            },function(){
-                this.loadData(); 
-            })
-            return;
-        }
-        let currDay = d;
-        let dTemp=moment(dateString),dTemp1 = moment(dateString);
-        let weekStart = dTemp1.startOf('week');
-        let weekEnd = dTemp.endOf('week');
+      console.log(d,dateString)
+        let currDay = d.format('YYYY-MM-DD');
+        let weekStart = moment(currDay).startOf('week');
+        let weekEnd = moment(currDay).endOf('week');
         this.setState({
-            curweek:currDay,
-            weekStart: weekStart,
-            weekEnd: weekEnd
+            curweek:moment(currDay),
+            weekStart: moment(weekStart),
+            weekEnd: moment(weekEnd)
         },function(){
             this.loadData(); 
         });
@@ -147,16 +235,16 @@ export default class ArrangeDetail extends React.Component {
         }
         
         this.setState({pagination},()=>{
-          this.loadListData(params)
+          this.loadData(params)
         })
       }
 
-    componentDidMount() {        
+    componentDidMount() {
         this.loadData();
     }
 
     render() {
-        const {loading, pagination,weekStart,curweek,weekEnd,curManhour,curSite,curPro,userName,userCode} = this.state        
+        const {loading, pagination,weekStart,curweek,weekEnd,timeVisible,t1,t2} = this.state        
         return (
             <div className="content">
                 <div className="txt" style={{textAlign:'center'}}>
@@ -169,10 +257,24 @@ export default class ArrangeDetail extends React.Component {
                         dataSource={this.getDataSource()}
                         pagination= {pagination}
                         onChange={this.handleTableChange}
-                        rowKey={record => record.id}
+                        rowKey={record => record.index}
                         loading={loading}
-                        scroll={{y:300}}
+                        scroll={{y:this.getDataSource().length > config.listLength ? config.scroll.y : null}}
                     />
+                    <Modal
+                      title={'选择时间段'}
+                      visible={timeVisible}
+                      width={300}
+                      maskClosable={false}
+                      onOk={this.add}
+                      onCancel={()=>{this.setState({timeVisible:false})}}
+                      
+                    >
+                      <div style={{padding:30,textAlign:'center'}}>
+                        <div style={{marginBottom:20}}>开始时间：<TimePicker value={t1} onChange={this.beginTimeChange} format="HH:mm"/></div>
+                        <div>结束时间：<TimePicker value={t2}  onChange={this.endTimeChange} format="HH:mm"/></div>
+                      </div>
+                    </Modal>
                 </div>
             </div>
         );
