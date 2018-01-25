@@ -1,6 +1,7 @@
 import React from 'react'
 import HistoryDetail from '../ConsulHistory/Detail'
 import $ from '../../common/AjaxRequest'
+import ScrollBar from 'react-free-scrollbar'
 import moment, { relativeTimeRounding } from 'moment'
 import API_URL from '../../common/url'
 import {Spin, Row,Avatar, Col, Popconfirm,  Card,Table, Form, Input, Select, Icon, Button, Dropdown, Menu, InputNumber, DatePicker, Modal, message, Upload, notification  } from 'antd'
@@ -107,7 +108,8 @@ class ListBox extends React.Component {
     const bty={lineHeight:'50px',fontSize:35,color:'#46C883'}
     const yty={lineHeight:'50px',fontSize:35,color:'#0088D5'}
     return (
-      <div id='hotscroll' className='scrollbar'>
+      // <div id='hotscroll' className='scrollbar'>
+      <ScrollBar className='bar' tracksize='5px' style={{height:300,paddingRight:20}} autohide>
         {dataSource.length>0 && dataSource.map((list,i ) => {
           
           return (<Row type="flex" align="top" gutter={2} key={i}>
@@ -138,13 +140,14 @@ class ListBox extends React.Component {
               </a>
               </Upload>
               </Col>
-              <Col span={3} style={{textAlign:'right'}}><Popconfirm title="确定删除吗？" onConfirm={()=>{this.props.del(i)}} > <Button type='danger' size='large' style={{position:'relative',top:'20px'}}><i className="iconfont icon-delete"/>删除</Button></Popconfirm></Col>
+              <Col span={3} style={{textAlign:'right'}}><Popconfirm title="确定删除吗？" onConfirm={()=>{this.props.del(i)}} okText="是" cancelText="否"> <Button type='danger' size='large' style={{position:'relative',top:'20px',right:10}}><i className="iconfont icon-delete"/>删除</Button></Popconfirm></Col>
           </Row>
         )})}
         <Modal visible={previewVisible} footer={null} onCancel={()=>{this.setState({previewVisible:false})}}>
             <img alt="example" style={{ width: '100%' }} src={previewImage} />
         </Modal>
-      </div>
+      </ScrollBar>
+      // </div>
     )
   }
 }
@@ -197,7 +200,7 @@ export default class Diy extends React.Component {
               })
               this.setState({
                 dataSource,
-                selectDocter:data.data.counselor,
+                selectDocter:data.data.doctorAccountId,
               })
             } else {
                 Modal.error({ title: data.error });
@@ -285,7 +288,7 @@ export default class Diy extends React.Component {
 
       const params = {}
       dataSource.map((data,i) =>{
-        params[`conversationDetails[${i}].uuid`] = data.type =="patient" ? '0' : selectDocter
+        params[`conversationDetails[${i}].ydataAccountId`] = data.type =="patient" ? '0' : selectDocter
         params[`conversationDetails[${i}].msg`] = data.txt
         params[`conversationDetails[${i}].mediaId`] = data.imgList
       })
@@ -335,7 +338,7 @@ export default class Diy extends React.Component {
               <Row gutter={10} style={{borderBottom:"1px solid #eee",padding:15,marginBottom:15,}}>
                 <Col md={8} sm={10} style={hty}><i style={{color:'red'}}> * </i>咨询对象（解答者）：
                 <Select style={{width:120}} value={`${selectDocter}`} onChange={(v)=>{this.setState({selectDocter:v})}}>
-                  {doctorList && doctorList.map(v => <Option key={`${v.userId}`} value={`${v.userId}`}>{v.userCompellation}</Option>)}
+                  {doctorList && doctorList.map(v => <Option key={`${v.ydataAccountId}`} value={`${v.ydataAccountId}`}>{v.userCompellation}</Option>)}
                 </Select>
                 </Col>
                 <Col span={4}>
@@ -346,7 +349,7 @@ export default class Diy extends React.Component {
               </Row>
               <ListBox ref={(el)=>{ this.ListBoxRef = el}} dataSource={dataSource} del={this.del} onChange={this.listChange}/>
               <Row>
-                <Col span={1} push={4}><Button type='primary' onClick={this.handleSubmit}>{isEdit ? '保存':'新建'}</Button></Col>
+                <Col span={1} push={4}><Button type='primary' onClick={this.handleSubmit}>{isEdit ? '保存':'添加'}</Button></Col>
                 <Col span={1} push={5}><Button onClick={history.goBack}>取消</Button></Col>
               </Row>
             </Spin>

@@ -213,7 +213,7 @@ class SearchForm extends Component {
                     <Input placeholder="请输入关键字" />
                 )}
                 </FormItem>
-                <Button icon="search" type="primary" htmlType="submit" style={{float:'right'}}>查询</Button>
+                <Button icon="search" type="primary" htmlType="submit">搜索</Button>
             </Form>
         );
     }
@@ -391,7 +391,7 @@ state = {
                     <Button type="danger" style={{marginRight:10}}> 批量删除</Button>
                 </Popconfirm>
             }            
-                <Link to={`/question/save`}><Button icon="plus" type="primary">新建</Button></Link>
+                <Link to={`/question/save`}><Button icon="plus" type="primary">添加</Button></Link>
             </Col>
         </Row>
     );
@@ -552,7 +552,7 @@ state = {
         let list = {
             index: ((pagination.current - 1) || 0) * pagination.pageSize + i + 1,
             id:d.questionStoreId,
-            keywords:d.questionStoreKeywordList.map( d=> `${d.keyword} ; ` )  ,
+            keywords:d.questionStoreKeywordList.map((v,i)=> ` ${v.keyword}` + (d.questionStoreKeywordList.length-1>i ? ';' : '')),
             ...d,
         }
         lists.push(list)
@@ -564,8 +564,9 @@ state = {
     };
 
     const paginationProps = {
-      // showSizeChanger: true,
-      // showQuickJumper: true,
+      showSizeChanger: true,
+      showQuickJumper: true,
+      pageSizeOptions:config.pageSizeOptions,
       ...pagination,
     };
 
@@ -595,7 +596,7 @@ state = {
               scroll={{y:lists.length > config.listLength ? config.scroll.y : null}}
             />
             <Modal
-                title={isEdit ? '修改动态':'新建动态'}
+                title={isEdit ? '修改动态':'添加动态'}
                 visible={modalVisible}
                 width={800}
                 onOk={this.handleAdd}

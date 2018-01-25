@@ -58,6 +58,8 @@ state = {
                     listData,
                     pagination,
                     isDiy,
+                    isHot:data.data.isHot || null,
+                    hotConversationId:data.data.hotConversationId
                 });
             } else {
                 Modal.error({ title: data.error });
@@ -189,8 +191,8 @@ state = {
                     <Button type="danger" style={{marginRight:10}}> 批量删除</Button>
                 </Popconfirm>
             }            
-                {/* <Button icon="plus" type="primary" onClick={()=>{this.changeModalView('modalVisible','open','new')}}>新建</Button> */}
-                <Link to='/index/news/save'><Button icon="plus" type="primary">新建</Button></Link>
+                {/* <Button icon="plus" type="primary" onClick={()=>{this.changeModalView('modalVisible','open','new')}}>添加</Button> */}
+                <Link to='/index/news/save'><Button icon="plus" type="primary">添加</Button></Link>
             </Col>
         </Row>
     );
@@ -309,7 +311,8 @@ state = {
       method: 'POST',
       url: API_URL.consul.removeHotConversation,
       data: {
-        conversationId:this.props.id,
+        // conversationId:this.props.id,
+        hotConversationId:this.state.hotConversationId
       },
       dataType: 'json',
       doneResult: data => {
@@ -364,7 +367,7 @@ state = {
     };
     const list =listData && listData.map((v,i)=>{
         return(
-            <div id='ava' key={i} style={{margin:'0 30px', padding:'15px 0',borderBottom:"1px solid #eee",borderTop: i == 0 ? "1px solid #eee":''}}>
+            <div id='ava' key={i} style={{margin:'10px 30px', padding:'15px 0',borderBottom:"1px solid #eee",borderTop: i == 0 ? "1px solid #eee":''}}>               
                 <Row type="flex" align="top" gutter={2}>
                     <Col span={2}><Avatar style={{width:50,height:50,lineHeight:'50px',borderRadius:'50%',background:'#eee'}}>{v.ydataAccount.accType == "DOCTOR" ? <i className="iconfont icon-shouye1" style={{lineHeight:'50px',fontSize:35,color:'#0088D5'}}/> : <i className="iconfont icon-ren" style={{lineHeight:'50px',fontSize:35,color:'#46C883'}}/>}  </Avatar></Col>
                     <Col span={18}>
@@ -372,17 +375,17 @@ state = {
                             <Col span={3}>{v.ydataAccount.accType == "DOCTOR" ? v.ydataAccount.ydataAccountCompellation || "医生" : v.ydataAccount.ydataAccountCompellation || "匿名"}</Col>
                             <Col span={10}>{v.createTime}</Col>
                             <Col span={24}>
-                            {v.mediaIdurl && v.mediaIdurl.map( d => <div><img src = {d} width='300'/><br/></div>)}                            
+                            {v.mediaIdurl && v.mediaIdurl.map((d,j) => <div key={j}><img src = {d} width='300'/><br/></div>)}                            
                             {v.msg}</Col>
                         </Row>
-                    </Col>
-                    {i == 0 && !isDiy ?  this.props.hot ? <Col span={4} style={{textAlign:'right'}}><Button type='primary' size='large' onClick={()=>{this.removeHot()}}><i className="iconfont icon-remen" />取消热门</Button></Col>:<Col span={4} style={{textAlign:'right'}}><Button type='primary' size='large' onClick={this.setHot}><i className="iconfont icon-remen" />设为热门</Button></Col>:null}
+                    </Col>                    
                 </Row>
             </div>
         )
     })
     return (        
         <Spin spinning={loading}>
+          { !isDiy ?  this.props.hot || this.state.isHot ? <div style={{textAlign:'right'}}> <Button type='primary' size='large' onClick={()=>{this.removeHot()}}><i className="iconfont icon-quxiaoremen" />取消热门</Button></div>:<div style={{textAlign:'right'}}><Button type='primary' size='large' onClick={this.setHot}><i className="iconfont icon-remen" />设为热门</Button></div>:null}
             {list}
         </Spin>
     );

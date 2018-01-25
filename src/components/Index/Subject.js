@@ -432,7 +432,7 @@ class SearchForm extends Component {
                 </FormItem>
                 <FormItem label="研究时间">
                 {getFieldDecorator('subjecgtTime')(
-                    <RangePicker style={{width:200}} />
+                    <RangePicker  placeholder={['开始时间','结束时间']} showTime format="YYYY-MM-DD HH:mm" style={{width:280}} />
                 )}
                 </FormItem>
                 <FormItem label="研究状态">
@@ -445,7 +445,7 @@ class SearchForm extends Component {
                     </Select>
                 )}
                 </FormItem>
-                <Button icon="search" type="primary" htmlType="submit" style={{float:'right'}}>查询</Button>
+                <Button icon="search" type="primary" htmlType="submit" style={{float:'right'}}>搜索</Button>
             </Form>
         );
     }
@@ -635,17 +635,17 @@ state = {
     SearchForm = Form.create({mapPropsToFields})(SearchForm)    
     return (
         <Row gutter={2}>
-            <Col md={22} sm={24} >
+            <Col md={24} sm={24} >
                 <SearchForm handleSearch={this.handleSearch} ref = { el => {this.searchFormRef = el}}/>
             </Col>
-            <Col md={2} sm={8} style={{textAlign:'right'}}>            
+            <Col md={24} sm={24} style={{textAlign:'right'}}>
             {
                 selectedRows.length > 0 &&
                 <Popconfirm title="确定要删除吗？" onConfirm={()=>{this.del(this.state.selectedRows)}} okText="是" cancelText="否">
                     <Button type="danger" style={{marginRight:10}}> 批量删除</Button>
                 </Popconfirm>
             }            
-                <Link to="/index/subject/save"><Button icon="plus" type="primary">新建</Button></Link>
+                <Link to="/index/subject/save"><Button icon="plus" type="primary">添加</Button></Link>
             </Col>
         </Row>
     );
@@ -794,8 +794,8 @@ state = {
         sorter: true,
         render: (text,record,index) => (
             record.researchType ==='INTERVENTION' ?
-                <div>干预</div> : 
-            record.researchType ==='NON-INTERVENTION' ?  
+                <div>干预</div> :
+            record.researchType ==='NON_INTERVENTION' ?  
                 <div>非干预</div> : null                        
         )
       }, 
@@ -847,7 +847,7 @@ state = {
         title: '操作',
         width:100,
         render: (text,record,index) => (
-          <div style={{textAlign:'center'}}>
+          <div>
             <Link to={`/index/subject/save/${record.id}`}>修改</Link>
             <span className="ant-divider" />
             <Popconfirm title="确定要删除吗？" onConfirm={()=>{this.del(record.id)}} okText="是" cancelText="否">
@@ -875,8 +875,9 @@ state = {
     };
 
     const paginationProps = {
-      // showSizeChanger: true,
-      // showQuickJumper: true,
+      showSizeChanger: true,
+      showQuickJumper: true,
+      pageSizeOptions:config.pageSizeOptions,
       ...pagination,
     };
 
@@ -918,7 +919,7 @@ state = {
               scroll={{y:lists.length > config.listLength ? config.scroll.y : null}}
             />
             <Modal
-                title={isEdit ? '修改动态':'新建动态'}
+                title={isEdit ? '修改动态':'添加动态'}
                 visible={modalVisible}
                 width={800}
                 onOk={this.handleAdd}

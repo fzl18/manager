@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import $ from '../../common/AjaxRequest';
-import { Prompt } from 'react-router-dom'
+import { Prompt } from 'react-router-dom';
 import moment from 'moment';
 import API_URL from '../../common/url';
 import { Row, Col, Popconfirm,  Card,Table, Form, Input, Select, Icon, Button, Dropdown, Menu, InputNumber, DatePicker, Modal, message, Upload, notification  } from 'antd';
@@ -55,13 +55,13 @@ class AddInput extends Component {
           <Input value={researchSiteId} style={{display:'none'}} />
         </Col>
         <Col>
-          <Input value={hospital} style={{width:180,}} placeholder="请输入医院" onChange={this.handleChange.bind(this,'hospital')}/>
+          <Input value={hospital} style={{width:220,}} placeholder="请输入医院" onChange={this.handleChange.bind(this,'hospital')}/>
         </Col>
         <Col >
-          <Input value={department} style={{width:150,marginLeft:10}} placeholder="请输入科室" onChange={this.handleChange.bind(this,'department')} />
+          <Input value={department} style={{width:200,marginLeft:10}} placeholder="请输入科室" onChange={this.handleChange.bind(this,'department')} />
         </Col>
         <Col >
-          <Input value={mainResearcher} style={{width:100,marginLeft:10}} placeholder="请输入研究者" onChange={this.handleChange.bind(this,'mainResearcher')} />
+          <Input value={mainResearcher} style={{width:160,marginLeft:10}} placeholder="请输入研究者" onChange={this.handleChange.bind(this,'mainResearcher')} />
         </Col>
         <Col >
           {this.props.length > 1 ? (
@@ -371,7 +371,7 @@ class FormBox extends React.Component {
               </FormItem>
               <FormItem {...submitFormLayout} style={{ marginTop: 32 }}>
                 <Button type="primary" htmlType="submit" loading={submitting}>
-                {this.props.isEdit ? '保存':'新建'}
+                {this.props.isEdit ? '保存':'添加'}
                 </Button>
                 <Button style={{ marginLeft: 8 }} onClick={this.props.goback}>取消</Button>
               </FormItem>
@@ -434,7 +434,8 @@ export default class SubjectSave extends React.Component {
                     notification['success']({
                         message: data.success,
                         description: '',
-                      })                    
+                      })
+                    this.setState({isSaved:true})
                     this.props.history.goBack()
                 } else {
                     Modal.error({ title: data.error});
@@ -532,7 +533,7 @@ export default class SubjectSave extends React.Component {
             )  
           FormBox=Form.create({mapPropsToFields})(FormBox)
         return( <div>
-          {/* <Prompt when={!isSaved} message="是否确认离开当前编辑页?" /> */}
-        <FormBox isEdit={isEdit} ref={el=>{this.formboxref = el}} goback={this.goback} handleSubmit={this.handleSubmit}/> </div>)
+          <Prompt when={!isSaved} message="是否确认离开当前编辑页?" />
+          {!isSaved ?<FormBox isEdit={isEdit} ref={el=>{this.formboxref = el}} goback={this.goback} handleSubmit={this.handleSubmit}/>:null } </div>)
     }
 }

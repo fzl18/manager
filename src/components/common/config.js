@@ -2,7 +2,8 @@ import API_URL from '../../common/url';
 import {Modal} from 'antd';
 const confirm = Modal.confirm
 export const config={
-    pageSize:15, // 表格数据分页数
+    pageSize:10, // 表格数据分页数
+    pageSizeOptions:['5','10','15','20','25','30'],//可选表格数据分页数
     scroll:{x:1200,y:310}, //表格框大小，超出显示滚动条
     listLength:8, // 表格滚动条出现条件
     imgType:'.jpg, .png, .gif',//支持上传图片格式

@@ -2,6 +2,7 @@ import React, {Component} from 'react';
 import $ from '../../common/AjaxRequest';
 import moment from 'moment';
 import API_URL from '../../common/url';
+import ExportUtil from '../../common/ExportUtil';
 import { Row, Col, Popconfirm,  Card,Table, Form, Input, Select, Icon, Button, Dropdown, Menu, InputNumber, DatePicker, Modal, message, Upload, notification  } from 'antd';
 import {config} from '../common/config';
 
@@ -91,7 +92,7 @@ class SearchForm extends Component {
                     </Select>
                 )}
                 </FormItem>
-                <Button icon="search" type="primary" htmlType="submit" style={{float:'right'}}>查询</Button>
+                <Button icon="search" type="primary" htmlType="submit">搜索</Button>
             </Form>
         );
     }
@@ -145,7 +146,7 @@ state = {
         }
     }
     $.sendRequest(options)
-  }
+  } 
 
   componentDidMount() {
     this.loadListData()
@@ -291,11 +292,15 @@ state = {
     );
   }
 
-  export=(v)=>{
-    console.log(v)
+  // export=()=>{
+  //   this.changeModalView('modalVisible','close')
+  // }
+
+  exportToExl = (params) => {
+    let url = `${API_URL.usermanager.exportPatients}`
+    ExportUtil.export(params, null, url)
     this.changeModalView('modalVisible','close')
   }
-
 
   handleSubmit = (e) => {
     e.preventDefault();
@@ -305,7 +310,7 @@ state = {
         values.end = moment(values.exportDate[1]).format(dayFormat)
         values.exportDate = null
         // this.save(values)
-        this.export(values)
+        this.exportToExl(values)
       }
     });
   }
@@ -469,8 +474,9 @@ state = {
     };
 
     const paginationProps = {
-      // showSizeChanger: true,
-      // showQuickJumper: true,
+      showSizeChanger: true,
+      showQuickJumper: true,
+      pageSizeOptions:config.pageSizeOptions,
       ...pagination,
     };
 
@@ -506,7 +512,7 @@ state = {
                 title={'导出'}
                 visible={modalVisible}
                 width={550}
-                onOk={this.handleAdd}
+                onOk={this.exportToExl}
                 onCancel={this.changeModalView.bind(this,'modalVisible','close')}
                 footer={null}
             >

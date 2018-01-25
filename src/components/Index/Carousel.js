@@ -177,7 +177,7 @@ class FormBox extends React.Component {
               </FormItem>
               <FormItem {...submitFormLayout} style={{ marginTop: 32 }}>
                 <Button type="primary" htmlType="submit" loading={submitting}>
-                {this.props.isEdit ? '保存':'新建'}
+                {this.props.isEdit ? '保存':'添加'}
                 </Button>
                 <Button style={{ marginLeft: 8 }} onClick={this.props.closeModalView.bind(this,'modalVisible','close')}>取消</Button>
               </FormItem>
@@ -201,7 +201,7 @@ class SearchForm extends Component {
                     <Input placeholder="请输入标题" />
                 )}
                 </FormItem>
-                <Button icon="search" type="primary" htmlType="submit" style={{float:'right'}}>查询</Button>
+                <Button icon="search" type="primary" htmlType="submit">搜索</Button>
             </Form>
         );
     }
@@ -393,7 +393,7 @@ state = {
                     <Button type="danger" style={{marginRight:10}}> 批量删除</Button>
                 </Popconfirm>
             }            
-                <Button icon="plus" type="primary" onClick={()=>{this.changeModalView('modalVisible','open','new')}}>新建</Button>
+                <Button icon="plus" type="primary" onClick={()=>{this.changeModalView('modalVisible','open','new')}}>添加</Button>
                 <Button style={{marginLeft:10}} icon="bar-chart" type="primary" onClick={this.sort}>排序</Button>
             </Col>
         </Row>
@@ -531,24 +531,28 @@ state = {
       {
         title: '序号',
         dataIndex: 'index',
+        width:60
       },
       {
         title: '轮播图片描述',
         dataIndex: 'description',
+        width:250
       },
-      {
-        title: '首页轮播图顺序',
-        dataIndex: 'item',
-        sorter: true,
-        // render:(text,record)=> record.item + 1
-      },      
+      // {
+      //   title: '首页轮播图顺序',
+      //   dataIndex: 'item',
+      //   sorter: true,
+      //   render:(text,record)=> record.item + 1
+      // },      
       {
         title: '创建时间',
         dataIndex: 'createTime', 
         sorter: true,
+        width:120
       },      
       {
         title: '操作',
+        width:100,
         render: (text,record,index) => (
           <div>
             <a href="javascript:;" onClick={()=>{this.changeModalView('modalVisible','open','edit',()=>{ this.edit(record.id) })}}>修改</a>
@@ -610,7 +614,7 @@ state = {
               scroll={{y:lists.length > config.listLength ? config.scroll.y : null}}
             />
             <Modal
-                title={isEdit ? '修改轮播图':'新建轮播图'}
+                title={isEdit ? '修改轮播图':'添加轮播图'}
                 maskClosable={false}
                 visible={modalVisible}
                 width={800}

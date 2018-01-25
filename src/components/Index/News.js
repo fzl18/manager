@@ -3,7 +3,7 @@ import {Route, Redirect, Link} from "react-router-dom";
 import $ from '../../common/AjaxRequest';
 import moment from 'moment';
 import API_URL from '../../common/url';
-import { Row, Col, Popconfirm,  Card,Table, Form, Input, Select, Icon, Button, Dropdown, Menu, InputNumber, DatePicker, Modal, message, Upload, notification  } from 'antd';
+import { Row, Col, Popconfirm,  Card,Table, Form, Input, Select, Icon, Button, Dropdown, Menu, InputNumber, DatePicker, Modal, message, Upload, notification,Pagination  } from 'antd';
 import Editor from '../common/Editor';
 import Ueditor from '../../common/Ueditor/Ueditor';
 import {config,uploadser} from '../common/config';
@@ -196,7 +196,7 @@ class SearchForm extends Component {
                     <Input placeholder="请输入标题" />
                 )}
                 </FormItem>
-                <Button icon="search" type="primary" htmlType="submit" style={{float:'right'}}>查询</Button>
+                <Button icon="search" type="primary" htmlType="submit">搜索</Button>
             </Form>
         );
     }
@@ -373,8 +373,8 @@ state = {
                     <Button type="danger" style={{marginRight:10}}> 批量删除</Button>
                 </Popconfirm>
             }            
-                {/* <Button icon="plus" type="primary" onClick={()=>{this.changeModalView('modalVisible','open','new')}}>新建</Button> */}
-                <Link to='/index/news/save'><Button icon="plus" type="primary">新建</Button></Link>
+                {/* <Button icon="plus" type="primary" onClick={()=>{this.changeModalView('modalVisible','open','new')}}>添加</Button> */}
+                <Link to='/index/news/save'><Button icon="plus" type="primary">添加</Button></Link>
             </Col>
         </Row>
     );
@@ -500,13 +500,13 @@ state = {
       {
         title: '动态标题',
         dataIndex: 'lastTendencyTitle',
-        width:300
+        width:600
       },
       {
         title: '创建时间',
         dataIndex: 'createTimeString',
         sorter: true,
-        width:110,
+        width:130,
       },      
       {
         title: '发布时间',
@@ -519,7 +519,7 @@ state = {
       },      
       {
         title: '操作',
-        width:150,
+        width:100,
         render: (text,record,index) => (
           <div>
             <Link to={`/index/news/save/${record.id}`}>修改</Link>
@@ -548,8 +548,9 @@ state = {
     };
 
     const paginationProps = {
-      // showSizeChanger: true,
-      // showQuickJumper: true,
+      showSizeChanger: true,
+      showQuickJumper: true,
+      pageSizeOptions:config.pageSizeOptions,
       ...pagination,      
     };
     const mapPropsToFields = () => (        
@@ -571,7 +572,7 @@ state = {
             <Table
               loading={loading}
               rowKey={record => record.id}
-            //   rowSelection={rowSelection}
+              // rowSelection={rowSelection}
               onSelectRow={this.handleSelectRows}
               dataSource={lists}
               columns={columns}
@@ -580,7 +581,7 @@ state = {
               scroll={{y:lists.length > config.listLength ? config.scroll.y : null}}
             />
             <Modal
-                title={isEdit ? '修改动态':'新建动态'}
+                title={isEdit ? '修改动态':'添加动态'}
                 visible={modalVisible}
                 width={800}
                 onOk={this.handleAdd}

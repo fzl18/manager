@@ -205,7 +205,7 @@ class FormBox extends React.Component {
               </FormItem>
               <FormItem {...submitFormLayout} style={{ marginTop: 32 }}>
                 <Button type="primary" htmlType="submit" loading={submitting}>
-                {this.props.isEdit ? '保存':'新建'}
+                {this.props.isEdit ? '保存':'添加'}
                 </Button>
                 <Button style={{ marginLeft: 8 }} onClick={this.props.goback}>取消</Button>
               </FormItem>
@@ -234,8 +234,8 @@ export default class MeetSave extends React.Component {
             values.regionId = values.locationId ? values.locationId[1] : null
             values.provinceId = values.locationId ? values.locationId[0] : null
             values.mainImgName = values.mainImgName.file ? values.mainImgName.file.response.data[0].fileName : values.mainImgName
-            values.beginTime = rangeTimeValue[0].format('YYYY-MM-DD HH:mm')
-            values.endTime = rangeTimeValue[1].format('YYYY-MM-DD HH:mm')
+            values.beginTime = rangeTimeValue[0].format('YYYY-MM-DD HH:mm:ss')
+            values.endTime = rangeTimeValue[1].format('YYYY-MM-DD HH:mm:ss')
             values.locationId=null
             values.meetingTime=null
             // this.setState({isSaved:true},()=>{this.save(values)})
@@ -259,7 +259,8 @@ export default class MeetSave extends React.Component {
                     notification['success']({
                         message: data.success,
                         description: '',
-                      })                    
+                      })
+                    this.setState({isSaved:true}) 
                     this.props.history.goBack()
                 } else {
                     Modal.error({ title: data.error});
@@ -342,7 +343,7 @@ export default class MeetSave extends React.Component {
             )
           FormBox=Form.create({mapPropsToFields})(FormBox)
         return( <div>
-          {/* <Prompt when={!isSaved} message="是否确认离开当前编辑页?" /> */}
-        <FormBox isEdit={isEdit} ref={el=>{this.formboxref = el}} goback={this.props.history.goBack} handleSubmit={this.handleSubmit}/> </div>)
+          <Prompt when={!isSaved} message="是否确认离开当前编辑页?" />
+          {!isSaved ?<FormBox isEdit={isEdit} ref={el=>{this.formboxref = el}} goback={this.props.history.goBack} handleSubmit={this.handleSubmit}/> :null } </div> )
     }
 }

@@ -14,7 +14,7 @@ export default class ArrangeDetail extends React.Component {
         loading: false,
         data: [],
         pagination:{
-            pageSize: 15,
+            pageSize: 999,
             current: 1,
         },
         weekNum:null,
@@ -27,6 +27,8 @@ export default class ArrangeDetail extends React.Component {
         dayIndex:null,
         beginTime:null,
         endTime:null,
+        open: false,
+        open2:false
     };
 
     getColumns =()=>{
@@ -47,6 +49,7 @@ export default class ArrangeDetail extends React.Component {
                     title: moment(begin).add(i,'days').format("YYYY-MM-DD") ,
                     dataIndex:`time${i}`,
                     key:`time${i}`,
+                    className:'tabCenter',
                     width:100,
                     render:(text,record)=>
                       <div style={{textAlign:'center'}}>
@@ -239,6 +242,10 @@ export default class ArrangeDetail extends React.Component {
         })
       }
 
+      handleClose = (name) => name=='open2' ? this.setState({ open2: false }) : this.setState({ open: false })
+      handleOpenChange = (name,open) => {
+        name =='open2' ? this.setState({ open2:true}) : this.setState({open:true})
+      }
     componentDidMount() {
         this.loadData();
     }
@@ -248,16 +255,17 @@ export default class ArrangeDetail extends React.Component {
         return (
             <div className="content">
                 <div className="txt" style={{textAlign:'center'}}>
-                    <div style={{margin:'5px auto',width:"250px",height:"30px", position: "relative"}}><span style={{position:"absolute",zIndex:"999",left:"110px",top:"5px"}}>第{curweek.week()}周</span><a style={{position:"absolute",top:"5px",left:"20px"}} href="javascript:void(0)" onClick={this.prevWeek}><Icon type="left-circle-o" style={{fontSize:20}}/></a> <DatePicker onChange={this.onChange} value={curweek} format="YYYY" style={{width:150}}/> <a  style={{position:"absolute",top:0,right:20,fontSize:20}} href="javascript:void(0)" onClick={this.nextWeek}><Icon type="right-circle-o" /></a></div>
+                    <div style={{margin:'5px auto',width:"250px",height:"30px", position: "relative"}}><span style={{position:"absolute",zIndex:"999",left:"110px",top:"5px"}}>第{curweek.week()}周</span><a style={{position:"absolute",top:"5px",left:"20px"}} href="javascript:void(0)" onClick={this.prevWeek}><Icon type="left-circle-o" style={{fontSize:20}}/></a> <DatePicker allowClear={false} onChange={this.onChange} value={curweek} format="YYYY" style={{width:150}}/> <a  style={{position:"absolute",top:0,right:20,fontSize:20}} href="javascript:void(0)" onClick={this.nextWeek}><Icon type="right-circle-o" /></a></div>
                     <div style={{color:'#999',marginBottom:20}}>{weekStart.format(dayFormat)} 至 {weekEnd.format(dayFormat)}</div>
                 </div>
                 <div className="content">
                     <Table
                         columns={this.getColumns()}
                         dataSource={this.getDataSource()}
-                        pagination= {pagination}
+                        // pagination= {pagination}
+                        pagination= {false}
                         onChange={this.handleTableChange}
-                        rowKey={record => record.index}
+                        rowKey={record => record.id}
                         loading={loading}
                         scroll={{y:this.getDataSource().length > config.listLength ? config.scroll.y : null}}
                     />
@@ -267,12 +275,20 @@ export default class ArrangeDetail extends React.Component {
                       width={300}
                       maskClosable={false}
                       onOk={this.add}
-                      onCancel={()=>{this.setState({timeVisible:false})}}
+                      onCancel={()=>{this.setState({timeVisible:false,open:false,open2:false})}}
                       
                     >
                       <div style={{padding:30,textAlign:'center'}}>
-                        <div style={{marginBottom:20}}>开始时间：<TimePicker value={t1} onChange={this.beginTimeChange} format="HH:mm"/></div>
-                        <div>结束时间：<TimePicker value={t2}  onChange={this.endTimeChange} format="HH:mm"/></div>
+                        <div style={{marginBottom:20}}>开始时间：<TimePicker placeholder='请选择' minuteStep={5} onOpenChange={this.handleOpenChange.bind(this,'open')} open={this.state.open} value={t1 || null} onChange={this.beginTimeChange} format="HH:mm" addon={() => (
+          <Button size="small" type="primary" onClick={this.handleClose.bind(this,'open')}>
+            确定
+          </Button>
+        )}/></div>
+                        <div>结束时间：<TimePicker placeholder='请选择' minuteStep={5} onOpenChange={this.handleOpenChange.bind(this,'open2')} open={this.state.open2} value={t2 ||null} onChange={this.endTimeChange} format="HH:mm" addon={() => (
+          <Button size="small" type="primary" onClick={this.handleClose.bind(this,'open2')}>
+            确定
+          </Button>
+        )}/></div>
                       </div>
                     </Modal>
                 </div>

@@ -13,7 +13,9 @@ const FormItem = Form.Item;
 const { MonthPicker, RangePicker } = DatePicker;
 const { Option } = Select;
 const getValue = obj => Object.keys(obj).map(key => obj[key]).join(',');
-const dayFormat = 'YYYY-MM-DD'
+const dayFormat = 'YYYY-MM-DD';
+
+const dayFormatMeet = 'YYYY-MM-DD HH:MM';
 
 class FormBox extends React.Component {
     state={        
@@ -196,7 +198,7 @@ class SearchForm extends Component {
                 </FormItem>
                 <FormItem label="会议时间">
                 {getFieldDecorator('meetingTime')(
-                    <RangePicker style={{width:210}} />
+                    <RangePicker placeholder={['开始时间','结束时间']} showTime format="YYYY-MM-DD HH:mm" style={{width:280}} />
                 )}
                 </FormItem>
                 <FormItem label="会议地点">
@@ -209,7 +211,7 @@ class SearchForm extends Component {
                     />
                 )}
                 </FormItem>
-                <Button icon="search" type="primary" htmlType="submit" style={{float:'right'}}>查询</Button>
+                <Button icon="search" type="primary" htmlType="submit">搜索</Button>
             </Form>
         );
     }
@@ -368,7 +370,6 @@ state = {
     e.preventDefault();
     this.searchFormRef.validateFields((err, fieldsValue) => {
       if (err) return;
-      console.log(fieldsValue)
       const rangeTimeValue = fieldsValue['meetingTime'] || null;
       fieldsValue.beginTime = rangeTimeValue && Object.keys(rangeTimeValue).length>0 ? rangeTimeValue[0].format('YYYY-MM-DD HH:mm:ss') :null
       fieldsValue.endTime = rangeTimeValue && Object.keys(rangeTimeValue).length>0 ? rangeTimeValue[1].format('YYYY-MM-DD HH:mm:ss') :null
@@ -460,7 +461,7 @@ state = {
                     <Button type="danger" style={{marginRight:10}}> 批量删除</Button>
                 </Popconfirm>
             }            
-                <Link to='/index/meetsave'><Button icon="plus" type="primary" >新建</Button></Link>
+                <Link to='/index/meetsave'><Button icon="plus" type="primary" >添加</Button></Link>
             </Col>
         </Row>
     );
@@ -630,7 +631,7 @@ state = {
             index: ((pagination.current - 1) || 0) * pagination.pageSize + i + 1,
             id:d.meetingId,
             ...d,
-            meetingTime:`${d.beginTime} ~ ${d.endTime}`
+            meetingTime:`${moment(d.beginTime).format(dayFormatMeet)} ~ ${moment(d.endTime).format(dayFormatMeet)}`
         }
         lists.push(list)
     })
@@ -641,8 +642,9 @@ state = {
     };
 
     const paginationProps = {
-      // showSizeChanger: true,
-      // showQuickJumper: true,
+      showSizeChanger: true,
+      showQuickJumper: true,
+      pageSizeOptions:config.pageSizeOptions,
       ...pagination,
     };
 
@@ -676,7 +678,7 @@ state = {
               scroll={{y:lists.length > config.listLength ? config.scroll.y : null}}
             />
             <Modal
-                title={isEdit ? '修改会议':'新建会议'}
+                title={isEdit ? '修改会议':'添加会议'}
                 visible={modalVisible}
                 width={800}
                 onOk={this.handleAdd}

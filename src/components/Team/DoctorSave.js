@@ -2,6 +2,7 @@ import React, {Component} from 'react';
 import { Link } from 'react-router-dom';
 import $ from '../../common/AjaxRequest';
 import moment from 'moment';
+import { Prompt } from 'react-router-dom';
 import API_URL from '../../common/url';
 import { Row, Col, Popconfirm,  Card,Table, Form, Input, Select, Icon, Button, Dropdown, Menu, InputNumber, DatePicker, Modal, message, Upload, notification  } from 'antd';
 import Editor from '../common/Editor';import Ueditor from '../../common/Ueditor/Ueditor';
@@ -101,6 +102,7 @@ class FormBox extends React.Component {
     selectChange=(value)=>{
       const { form } = this.props
       if(!value.key){
+  
         this.setState({
           doctorName:''
         })
@@ -108,6 +110,23 @@ class FormBox extends React.Component {
         form.setFieldsValue({
           userId:null
         });
+      }
+      else{
+        const {sourceData} = this.state;
+        if(sourceData){
+          sourceData.map( (s, index) =>{
+            if(s.ydataAccountId == value.key){
+               this.setState({
+                doctorName:s.userCompellation,
+              })
+              form.setFieldsValue({
+                userId:value.key,
+                userCompellation:s.userCompellation,
+              });
+              return;
+            }
+          } )
+        }
       }
     }
   
@@ -117,7 +136,7 @@ class FormBox extends React.Component {
           // console.log(sourceData)
           const data = sourceData.map(r => ({
               text: r.userName+"["+r.userCompellation+"]",
-              value: r.userId,
+              value: r.ydataAccountId,
           }));
           this.setState({
             doctorList:data,
@@ -241,7 +260,7 @@ class FormBox extends React.Component {
               </FormItem>
               <FormItem {...submitFormLayout} style={{ marginTop: 32 }}>
                 <Button type="primary" htmlType="submit" loading={submitting}>
-                {this.props.isEdit ? '保存':'新建'}
+                {this.props.isEdit ? '保存':'添加'}
                 </Button>
                 <Button style={{ marginLeft: 8 }} onClick={this.props.goback}>取消</Button>
               </FormItem>
@@ -259,6 +278,7 @@ export default class DoctorSave extends React.Component {
     state={
         isEdit:false,
         editId:'',
+        isSaved:false,
     }
 
     handleSubmit = (e) => {
@@ -267,7 +287,7 @@ export default class DoctorSave extends React.Component {
           if (!err) {
             values.doctorImgName = values.doctorImgName.file ? values.doctorImgName.file.response.data[0].fileName : values.doctorImgName
             values.ydataUuId = values.userId.key || values.userId
-            if(!values.ydataUuId || !values.doctor || values.doctor.id != values.ydataUuId){
+            if(!values.ydataUuId && !values.userId){ // || !values.doctor || values.doctor.id != values.ydataUuId){
               message.warn('医生账号选择有误，请检查！')
               return
             }
@@ -283,7 +303,7 @@ export default class DoctorSave extends React.Component {
             url: isEdit ? API_URL.index.modifyDepartmentDoctor :  API_URL.index.addDepartmentDoctor,
             data: {
                 ...params,
-                ydataUuId: isEdit ? editId : null
+                ydataAccountId: isEdit ? editId : params.ydataUuId
             },
             dataType: 'json',
             doneResult: data => {
@@ -292,6 +312,7 @@ export default class DoctorSave extends React.Component {
                         message: data.success,
                         description: '',
                       })                    
+                    this.setState({isSaved:true})
                     this.props.history.goBack()
                 } else {
                     Modal.error({ title: data.error});
@@ -308,7 +329,7 @@ export default class DoctorSave extends React.Component {
             data: {
                 offset: 1,
                 limit: 1,
-                userId:id,
+                ydataAccountId:id,
             },
             dataType: 'json',
             doneResult: data => {
@@ -335,7 +356,7 @@ export default class DoctorSave extends React.Component {
             data: {
                 offset: 1,
                 limit: 1,
-                userId:id,
+                ydataAccountId:id,
             },
             dataType: 'json',
             doneResult: data => {
@@ -361,7 +382,7 @@ export default class DoctorSave extends React.Component {
     }
 
     render(){
-        const {isEdit, detail}=this.state
+        const {isEdit, detail, isSaved}=this.state
         const mapPropsToFields = () => (        
             isEdit ?        
               { 
@@ -376,6 +397,9 @@ export default class DoctorSave extends React.Component {
               } : null
             ) 
           FormBox=Form.create({mapPropsToFields})(FormBox)
-        return( <FormBox isEdit={isEdit} disabled={isEdit} ref={el=>{this.formboxref = el}} goback={this.props.history.goBack} handleSubmit={this.handleSubmit}/> )
+        return( <div>
+          <Prompt when={!isSaved} message="是否确认离开当前编辑页?" />
+          {!isSaved ? <FormBox isEdit={isEdit} disabled={isEdit} ref={el=>{this.formboxref = el}} goback={this.props.history.goBack} handleSubmit={this.handleSubmit}/> :null}
+       </div>)
     }
 }

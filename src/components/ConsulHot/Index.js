@@ -192,12 +192,12 @@ class SearchForm extends Component {
             <Form onSubmit={this.props.handleSearch} layout="inline">
                 <FormItem label="问题概要">
                 {getFieldDecorator('msg')(
-                    <Input placeholder="请输入问题概要" />
+                    <Input placeholder="请输入问题概要" style={{width:147}}/>
                 )}
                 </FormItem>
                 <FormItem label="提问者">
                 {getFieldDecorator('quizzers')(
-                    <Input placeholder="请输入提问者" style={{width:100}}/>
+                    <Input placeholder="请输入提问者" style={{width:90}}/>
                 )}
                 </FormItem>
                 <FormItem label="咨询对象">
@@ -207,7 +207,7 @@ class SearchForm extends Component {
                 </FormItem>
                 <FormItem label="解答者">
                 {getFieldDecorator('solvers')(
-                    <Input placeholder="请输入解答者" style={{width:100}}/>
+                    <Input placeholder="请输入解答者" style={{width:90}}/>
                 )}
                 </FormItem>
                 <FormItem label="来源">
@@ -226,7 +226,7 @@ class SearchForm extends Component {
                     </Select>
                 )}
                 </FormItem>
-                <Button icon="search" type="primary" htmlType="submit" style={{float:'right'}}>查询</Button>
+                <Button icon="search" type="primary" htmlType="submit">搜索</Button>
             </Form>
         );
     }
@@ -389,6 +389,7 @@ state = {
     const { selectedRows, searchFormValues } = this.state;
     const mapPropsToFields = () => ({ 
             source:{value:searchFormValues.source},
+            msg:{value:searchFormValues.msg},
             isTop:{value:searchFormValues.isTop},
             counselors:{value:searchFormValues.counselors},
             quizzers:{value:searchFormValues.quizzers},
@@ -399,7 +400,7 @@ state = {
         <Row gutter={2}>
             <Col md={24} sm={24} >
                 <SearchForm handleSearch={this.handleSearch} ref = { el => {this.searchFormRef = el}}/>
-                <Link style={{float:'right',marginBottom:20}} to='/consulhot/diy'><Button icon="plus" type="primary" style={{marginRight:15}}>自定义</Button></Link>
+                <Link style={{float:'right'}} to='/consulhot/diy'><Button icon="plus" type="primary">自定义</Button></Link>
             </Col>
             <Col md={2} sm={8} >            
             {
@@ -408,7 +409,7 @@ state = {
                     <Button type="danger" style={{marginRight:10}}> 批量删除</Button>
                 </Popconfirm>
             }            
-                {/* <Button icon="plus" type="primary" onClick={()=>{this.changeModalView('modalVisible','open','new')}}>新建</Button> */}
+                {/* <Button icon="plus" type="primary" onClick={()=>{this.changeModalView('modalVisible','open','new')}}>添加</Button> */}
                 
             </Col>
         </Row>
@@ -615,9 +616,9 @@ state = {
         title: '操作',
         width:120,
         render: (text,record,index) => (
-          <div style={{textAlign:'center'}}>
-            { record.source !== "咨询历史" &&
-            <div style={{textAlign:'center'}}>                
+          <div>
+            { record.source !== "历史咨询" &&
+            <div>                
                 <Link to={`/consulhot/diy/${record.id}`}>修改</Link>
                     <span className="ant-divider" />
                 <Popconfirm title="确定要删除吗？" onConfirm={()=>{this.del(record.hotConversationId)}} okText="是" cancelText="否">
@@ -655,8 +656,9 @@ state = {
     };
 
     const paginationProps = {
-      // showSizeChanger: true,
-      // showQuickJumper: true,
+      showSizeChanger: true,
+      showQuickJumper: true,
+      pageSizeOptions:config.pageSizeOptions,
       ...pagination,      
     };
     const mapPropsToFields = () => (        
@@ -687,7 +689,7 @@ state = {
               scroll={{y:lists.length > config.listLength ? config.scroll.y : null}}
             />
             <Modal
-                title={isEdit ? '修改动态':'新建动态'}
+                title={isEdit ? '修改动态':'添加动态'}
                 visible={modalVisible}
                 width={800}
                 onOk={this.handleAdd}

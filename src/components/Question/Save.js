@@ -1,6 +1,7 @@
 import React, {Component} from 'react';
 import $ from '../../common/AjaxRequest';
 import moment from 'moment';
+import { Prompt } from 'react-router-dom';
 import API_URL from '../../common/url';
 import { Row, Col, Popconfirm,  Card,Table, Form, Input, Select, Icon, Button, Dropdown, Menu, InputNumber, DatePicker, Modal, message, Upload, notification  } from 'antd';
 import Editor from '../common/Editor';import Ueditor from '../../common/Ueditor/Ueditor';
@@ -178,12 +179,15 @@ class FormBox extends React.Component {
                   </Button>
                 )}                
               </FormItem>
+              { questionStoreKeywordList.length > 0 ?
               <FormItem
                 {...submitFormLayout}
                 label=""
               >
                 <div id="item" style={{width:'110%',display:'flex',flexWrap:'wrap'}}>{formItems}</div>
-              </FormItem>              
+              </FormItem>
+              : null
+              }            
               <FormItem
                 {...formItemLayout}
                 label="答案"
@@ -200,7 +204,7 @@ class FormBox extends React.Component {
               </FormItem>
               <FormItem {...submitFormLayout} style={{ marginTop: 32 }}>
                 <Button type="primary" htmlType="submit" loading={submitting}>
-                {this.props.isEdit ? '保存':'新建'}
+                {this.props.isEdit ? '保存':'添加'}
                 </Button>
                 <Button style={{ marginLeft: 8 }} onClick={this.props.goback}>取消</Button>
               </FormItem>
@@ -218,6 +222,7 @@ export default class Save extends React.Component {
     state={
         isEdit:false,
         editId:'',
+        isSaved:false,
     }
 
     handleSubmit = (e) => {
@@ -248,6 +253,7 @@ export default class Save extends React.Component {
                         message: data.success,
                         description: '',
                       })
+                    this.setState({isSaved:true})
                     this.props.history.goBack()
                 } else {
                     Modal.error({ title: data.error});
@@ -317,7 +323,7 @@ export default class Save extends React.Component {
     }
 
     render(){
-        const {isEdit, detail}=this.state
+        const {isEdit, detail, isSaved}=this.state
         const mapPropsToFields = () => (        
             isEdit ?        
               { 
@@ -327,6 +333,10 @@ export default class Save extends React.Component {
               } : null
             )
           FormBox=Form.create({mapPropsToFields})(FormBox)
-        return( <FormBox isEdit={isEdit} ref={el=>{this.formboxref = el}} goback={this.props.history.goBack} handleSubmit={this.handleSubmit}/> )
+        return( 
+          <div>
+        <Prompt when={!isSaved} message="是否确认离开当前编辑页?" />
+        <FormBox isEdit={isEdit} ref={el=>{this.formboxref = el}} goback={this.props.history.goBack} handleSubmit={this.handleSubmit}/>
+        </div>)
     }
 }

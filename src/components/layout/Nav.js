@@ -1,6 +1,7 @@
 import React from 'react';
 import { Menu, Icon } from 'antd';
 import lodash from 'lodash'
+import ScrollBar from 'react-free-scrollbar'
 import auth from '../../common/Auth';
 import { PAGEAUTH } from '../../common/AuthConfig';
 import './style/layout.less';
@@ -10,9 +11,10 @@ const SubMenu = Menu.SubMenu;
 
 class Nav extends React.Component {
     state = {
-        current: '/index',
+        current: '#/index',
+        openKeys: [],
     }
-
+    rootSubmenuKeys = ['0', '1', '2','6'];
     handleClick = e => {
         this.setState({
             current: e.key,
@@ -30,19 +32,53 @@ class Nav extends React.Component {
         let pageAuth = {};
     }
 
-    componentWillReceiveProps(){
-        this.checkPageAuth();
-        const hashStr = this.getHashUrl();
+    onOpenChange = (openKeys) => {
+        //   this.setState({ sub:openKeys[1] })
+        const latestOpenKey = openKeys.find(key => this.state.openKeys.indexOf(key) === -1);
+        if (this.rootSubmenuKeys.indexOf(latestOpenKey) === -1) {
+        this.setState({ openKeys });
+        } else {
         this.setState({
-            current: hashStr
-        })
+            openKeys: latestOpenKey ? [latestOpenKey] : [],
+        });
+        }
+      }
+
+    componentWillReceiveProps(){
+        // this.checkPageAuth();
+        // const hashStr = this.getHashUrl();
+        menuList.map((levelone,index) => {
+            if(levelone.children && !levelone.show){
+               levelone.children.map((leveltwo,i) => {
+                   if(location.hash == leveltwo.path){this.setState({openKeys:[`${index}`]});console.log(index)}
+               })
+           }})
+        // this.setState({
+        //     current: location.hash,
+        // })
+        
     }
 
+    componentDidMount(){  
+        menuList.map((levelone,index) => {      
+            if(levelone.children && !levelone.show){
+               levelone.children.map((leveltwo,i) => {
+                   if(location.hash == leveltwo.path){this.setState({openKeys:[`${index}`]})}
+               })
+           }
+        })
+    }
     componentWillMount(){
-        this.checkPageAuth();
-        const hashStr = this.getHashUrl();
+        // this.checkPageAuth();
+        // const hashStr = this.getHashUrl();
+        menuList.map((levelone,index) => {
+            if(levelone.children && !levelone.show){
+               levelone.children.map((leveltwo,i) => {
+                   if(location.hash == leveltwo.path){this.setState({openKeys:[`${index}`]})}
+               })
+           }})
         this.setState({
-            current: hashStr
+            current: location.hash
         })
     }
 
@@ -54,11 +90,11 @@ class Nav extends React.Component {
         let menuNode = 
             menuList.map((levelone,index) => {
                 if(!levelone.children || levelone.show){
-                    return <Menu.Item key={levelone.path}><a href={levelone.path}> { levelone.icon ? <i className={`iconfont ${levelone.icon}`}></i> : <Icon type='plus'/>  }  <span style={ !this.props.isShowTitle ? null : {visibility:'hidden'}}>{levelone.name}</span></a></Menu.Item>
+                    return <Menu.Item key={levelone.path}><a href={levelone.path}> { levelone.icon ? <i className={`anticon iconfont ${levelone.icon}`} /> : <Icon type='plus'/>}  <span >{levelone.name}</span></a></Menu.Item>
                 }else if(levelone.children && !levelone.show){
-                    return  <SubMenu key={index} title={ <span>{ levelone.icon ? <i className={`iconfont ${levelone.icon}`}></i> : <Icon type='plus'/>  } <span style={ !this.props.isShowTitle ? {display:'inline-block'} : {display:'none'} }>{levelone.name}</span></span>}>
+                    return  <SubMenu key={index} title={ <span>{ levelone.icon ? <i className={`anticon iconfont ${levelone.icon}`} /> : <Icon type='plus'/>  } <span>{levelone.name}</span></span>}>
                     {
-                        levelone.children.map((leveltwo,index) => {
+                        levelone.children.map((leveltwo,i) => {
                             return <Menu.Item key={leveltwo.path}><a href={leveltwo.path}>{leveltwo.name}</a></Menu.Item>;
                         })
                     }
@@ -69,24 +105,28 @@ class Nav extends React.Component {
         return menuNode;
     }
 
-    render() {
-        const menuItems = this.getMenus();
-
+    render() {        
+        const menuItems = this.getMenus()
+        
         return (
-            <nav className="nav-bar">
-                <div className="wrapper">
-                <Menu
-                    theme="dark" 
-                    
-                    
-                    onSelect={this.handleClick}
-                    selectedKeys={[this.state.current]}
-                    mode="inline"
-                >
-                {menuItems}
-                    </Menu>
-                </div>
-            </nav>
+
+            <nav className="nav-bar" style={!this.props.collapsed ?{overflowY:'auto',height:'85vh'} :null}>
+            {/* <ScrollBar className='sideBar nav-bar' tracksize='5px' style={{paddingRight:20}} autohide={this.props.collapsed ? true:false}> */}
+            <Menu
+                theme="dark"                     
+                onSelect={this.handleClick}
+                openKeys={this.state.openKeys}
+                // defaultOpenKeys={this.state.openKeys}
+                onOpenChange={this.onOpenChange}
+                selectedKeys={[this.state.current]}
+                // selectedKeys={[location.hash]}
+                mode="inline"
+            >
+            {menuItems}
+            </Menu>
+             {/* </ScrollBar> */}
+            </nav>  
+
         );
     }
 }

@@ -157,7 +157,7 @@ class FormBox extends React.Component {
               </FormItem>
               <FormItem {...submitFormLayout} style={{ marginTop: 32 }}>
                 <Button type="primary" htmlType="submit" loading={submitting}>
-                  {this.props.isEdit ? '保存':'新建'}
+                  {this.props.isEdit ? '保存':'添加'}
                 </Button>
                 <Button style={{ marginLeft: 8 }} onClick={this.props.goback}>取消</Button>
               </FormItem>
@@ -184,9 +184,9 @@ export default class NewsSave extends React.Component {
             // console.log(values.htmlText.length)
             values.publishDay = moment(values.publishDay).format(dayFormat)
             values.mainImgName = values.mainImgName.file ? values.mainImgName.file.response.data[0].fileName : values.mainImgName
-            values.htmlText = values.htmlText
-            // this.setState({isSaved:true},()=>{this.save(values)})
+            values.htmlText = values.htmlText            
             this.save(values)
+            
           }
         });
       }
@@ -208,7 +208,8 @@ export default class NewsSave extends React.Component {
                         description: '',
                       })
                     // this.changeModalView('modalVisible','close')
-                    // this.loadListData()                    
+                    // this.loadListData()     
+                    this.setState({isSaved:true})               
                     this.props.history.goBack()                 
                 } else {
                   Modal.error({ title: data.error});
@@ -281,8 +282,9 @@ export default class NewsSave extends React.Component {
         FormBox=Form.create({mapPropsToFields})(FormBox)
         return(
         <div>
-        {/* <Prompt when={!isSaved} message="是否确认离开当前编辑页?" /> */}
-        <FormBox isEdit={isEdit} ref={el=>{this.formboxref = el}} goback={this.goback} handleSubmit={this.handleSubmit}/> 
+        <Prompt when={!isSaved} message="是否确认离开当前编辑页?" />
+        {!isSaved ? <FormBox isEdit={isEdit} ref={el=>{this.formboxref = el}} goback={this.goback} handleSubmit={this.handleSubmit}/> 
+        : null}        
         </div>)
     }
 }

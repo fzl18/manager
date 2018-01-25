@@ -229,43 +229,9 @@ class FormBox extends React.Component {
 }
 
 class SearchForm extends Component {
-    state = {
-      loading: false,
-      listData:[],
-    }
-    loadClass=(params)=>{
-      const options ={
-        method: 'POST',
-        url: API_URL.education.queryPopularScienceCategoryList,
-        data: {
-            offset: 1,
-            limit: 999,
-            ...params,
-        },
-        dataType: 'json',
-        doneResult: data => {
-            if (!data.error) {
-                const listData = data.datas || data.data;
-                this.setState({
-                    loading: false,
-                    listData,
-                });
-            } else {
-                Modal.error({ title: data.error });
-            }
-            this.setState({loading:false})
-        }
-    }
-    $.sendRequest(options)
-    }
-
-    componentDidMount(){
-      this.loadClass()
-    }
-
     render(){
-        const { getFieldDecorator } = this.props.form;
-        const {listData}=this.state
+        const { getFieldDecorator, getFieldValue } = this.props.form;
+        const listClass = getFieldValue('listClass') 
         return (
             <Form onSubmit={this.props.handleSearch} layout="inline">
                 <FormItem label="文章标题">
@@ -277,11 +243,11 @@ class SearchForm extends Component {
               >
                 {getFieldDecorator('popularScienceCategoryId')(
                     <Select style={{width:150}} allowClear placeholder="请选择">
-                      {listData.map( v => <Option value = {`${v.popularScienceCategoryId}`} >{v.categoryName}</Option> )}                      
+                      {listClass && listClass.map( v => <Option key={v.popularScienceCategoryId} value = {`${v.popularScienceCategoryId}`} >{v.categoryName}</Option> )}                      
                     </Select>
                 )}
               </FormItem>
-                <Button icon="search" type="primary" htmlType="submit" style={{float:'right'}}>查询</Button>
+                <Button icon="search" type="primary" htmlType="submit">搜索</Button>
             </Form>
         );
     }
@@ -295,6 +261,7 @@ state = {
         current: 1,
     },
     listData:[],
+    listClass:[],
     detail:'',
     addInputValue: '',
     modalVisible: false,
@@ -337,8 +304,33 @@ state = {
     $.sendRequest(options)
   }
 
+  loadClass=(params)=>{
+    const options ={
+      method: 'POST',
+      url: API_URL.education.queryPopularScienceCategoryList,
+      data: {
+          offset: 1,
+          limit: 999,
+          ...params,
+      },
+      dataType: 'json',
+      doneResult: data => {
+        if (!data.error) {
+            const listClass = data.datas || data.data;
+            this.setState({
+                listClass,
+            });
+        } else {
+            Modal.error({ title: data.error });
+        }
+      }
+  }
+  $.sendRequest(options)
+  }
+
   componentDidMount() {
     this.loadListData()
+    this.loadClass()
   }
 
   componentWillReceiveProps(nextProps) {
@@ -441,10 +433,11 @@ state = {
 
 
   renderSearchForm() {
-    const { selectedRows, searchFormValues } = this.state;
+    const { selectedRows, searchFormValues, listClass } = this.state;
     const mapPropsToFields = () => ({ 
             popularScienceTitle:{value:searchFormValues.popularScienceTitle},
             popularScienceCategoryId:{value:searchFormValues.popularScienceCategoryId},
+            listClass:{value:listClass},
           })
     SearchForm = Form.create({mapPropsToFields})(SearchForm)    
     return (
@@ -459,7 +452,7 @@ state = {
                     <Button type="danger" style={{marginRight:10}}> 批量删除</Button>
                 </Popconfirm>
             }            
-                <Link to='/education/save'><Button icon="plus" type="primary">新建</Button></Link>
+                <Link to='/education/save'><Button icon="plus" type="primary">添加</Button></Link>
             </Col>
         </Row>
     );
@@ -598,7 +591,7 @@ state = {
         sorter: true,
         width:130,
         render:(text,record)=>(
-          moment(record.createTime).format("YY-MM-DD HH:mm:ss")
+          moment(record.createTime).format("YYYY-MM-DD HH:mm:ss")
         )
       },      
       {
@@ -607,7 +600,7 @@ state = {
         sorter: true,
         width:130,
         render:(text,record)=>(
-          moment(record.publishTime).format("YY-MM-DD")
+          moment(record.publishTime).format("YYYY-MM-DD")
         )
       },      
       {
@@ -641,8 +634,9 @@ state = {
     };
 
     const paginationProps = {
-      // showSizeChanger: true,
-      // showQuickJumper: true,
+      showSizeChanger: true,
+      showQuickJumper: true,
+      pageSizeOptions:config.pageSizeOptions,
       ...pagination,
     };
 
@@ -675,7 +669,7 @@ state = {
               scroll={{y:lists.length > config.listLength ? config.scroll.y : null}}
             />
             <Modal
-                title={isEdit ? '修改动态':'新建动态'}
+                title={isEdit ? '修改动态':'添加动态'}
                 visible={modalVisible}
                 width={800}
                 onOk={this.handleAdd}

@@ -162,7 +162,7 @@ class FormBox extends React.Component {
                     required: true,message:'请输入简介'
                   }],
                 })(
-                  <TextArea />
+                  <TextArea rows={4}/>
                 )}
               </FormItem>
               <FormItem
@@ -381,7 +381,7 @@ state = {
                     <Button type="danger" style={{marginRight:10}}> 批量删除</Button>
                 </Popconfirm>
             }            
-                <Button icon="plus" type="primary" onClick={()=>{this.changeModalView('modalVisible','open','new')}}>新建</Button>
+                <Button icon="plus" type="primary" onClick={()=>{this.changeModalView('modalVisible','open','new')}}>添加</Button>
             </Col>
         </Row>
     );

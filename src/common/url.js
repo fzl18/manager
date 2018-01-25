@@ -85,6 +85,7 @@ if (!STATIC) {
             modifyAssisantByHospitalDepartmentId: `${ENV.ADMIN_URL}/department/modifyAssisantByHospitalDepartmentId.do`,
             removeAssisantByHospitalDepartmentId: `${ENV.ADMIN_URL}/department/removeAssisantByHospitalDepartmentId.do`,
             resetUserPassword: `${ENV.ADMIN_URL}/department/resetUserPassword.do`,
+            exportPatients: `${ENV.ADMIN_URL}/department/exportPatients.do`,
         },
         serive:{
             queryServiceDetail:`${ENV.ADMIN_URL}/department/queryServiceDetail.do`,
@@ -104,8 +105,12 @@ if (!STATIC) {
             querySchedulingDetails:`${ENV.ADMIN_URL}/department/querySchedulingDetails.do`,
             enableScheduling:`${ENV.ADMIN_URL}/department/enableScheduling.do`,
             addScheduling:`${ENV.ADMIN_URL}/department/addScheduling.do`,
-            removeScheduling:`${ENV.ADMIN_URL}/department/removeScheduling.do`,
-            
+            removeScheduling:`${ENV.ADMIN_URL}/department/removeScheduling.do`,            
+        },
+        auth:{
+            queryScientificResearchLibrary:`${ENV.ADMIN_URL}/department/queryScientificResearchLibrary.do`,
+            modifyScientificResearchLibraryAuth:`${ENV.ADMIN_URL}/department/modifyScientificResearchLibraryAuth.do`,
+            queryDoctorByKeyword:`${ENV.ADMIN_URL}/department/queryDoctorByKeyword.do`,
         }
 	};
 }

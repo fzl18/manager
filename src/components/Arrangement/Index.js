@@ -195,7 +195,7 @@ class SearchForm extends Component {
                     <Input placeholder="请输入标题" />
                 )}
                 </FormItem>
-                <Button icon="search" type="primary" htmlType="submit" style={{float:'right'}}>查询</Button>
+                <Button icon="search" type="primary" htmlType="submit" style={{float:'right'}}>搜索</Button>
             </Form>
         );
     }
@@ -372,8 +372,8 @@ state = {
                     <Button type="danger" style={{marginRight:10}}> 批量删除</Button>
                 </Popconfirm>
             }            
-                {/* <Button icon="plus" type="primary" onClick={()=>{this.changeModalView('modalVisible','open','new')}}>新建</Button> */}
-                <Link to='/index/news/save'><Button icon="plus" type="primary">新建</Button></Link>
+                {/* <Button icon="plus" type="primary" onClick={()=>{this.changeModalView('modalVisible','open','new')}}>添加</Button> */}
+                <Link to='/index/news/save'><Button icon="plus" type="primary">添加</Button></Link>
             </Col>
         </Row>
     );
@@ -538,9 +538,9 @@ state = {
         title: '操作',
         width:150,
         render: (text,record,index) => (
-          <div style={{textAlign:'center'}}>
+          <div>
             {record.isArranged ?
-            <Popconfirm title="是否确认关闭排班？关闭后只本组医生都能回复患者咨询问题." onConfirm={()=>{this.toggle(record.id,record.isArranged)}} okText="是" cancelText="否">
+            <Popconfirm title="是否确认关闭排班？关闭后只有本组医生都能回复患者咨询问题." onConfirm={()=>{this.toggle(record.id,record.isArranged)}} okText="是" cancelText="否">
             <a href="javascript:;" >关闭排班</a>
             </Popconfirm> :
             <Popconfirm title="是否确认启用排班？启用后只有排班人员在排班时间内才能回复患者咨询问题." onConfirm={()=>{this.toggle(record.id,record.isArranged)}} okText="是" cancelText="否">
@@ -570,8 +570,9 @@ state = {
     };
 
     const paginationProps = {
-      // showSizeChanger: true,
-      // showQuickJumper: true,
+      showSizeChanger: true,
+      showQuickJumper: true,
+      pageSizeOptions:config.pageSizeOptions,
       ...pagination,      
     };
     const mapPropsToFields = () => (        
@@ -602,7 +603,7 @@ state = {
               scroll={{y:lists.length > config.listLength ? config.scroll.y : null}}
             />
             <Modal
-                title={isEdit ? '修改动态':'新建动态'}
+                title={isEdit ? '修改动态':'添加动态'}
                 visible={modalVisible}
                 width={800}
                 onOk={this.handleAdd}

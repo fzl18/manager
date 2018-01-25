@@ -19,11 +19,99 @@ class FormBox extends React.Component {
         previewVisible: false,
         previewImage:'',
         fileList:[],
+        doctorList:[],
+        doctorNames:[],
+        curDoctor:{}
+    }
+    del=(index)=>{
+      const {doctorNames} = this.state
+      doctorNames.splice(index,1)
+      this.setState({doctorNames})
+    }
+    add=()=>{
+      const {doctorNames,curDoctor} = this.state
+      if(Object.keys(curDoctor).length>0){
+        let has = false
+        doctorNames.map(d=>{
+          if(d.ydataAccountId == curDoctor.ydataAccountId){
+            has = true
+          }
+        })
+        if(has){message.warn('已存在'); return}
+        doctorNames.push({
+          ...curDoctor
+        })
+      }
+      this.setState({doctorNames})
+    }
+    doctorValidator=(rule, value, callback)=>{
+      const ok = this.state.doctorNames && this.state.doctorNames.length || 0
+      if(ok>0){
+          callback();
+          return;
+      }      
+      callback('请添加医生！');
     }
 
+    handleSelect=(v)=>{
+      this.state.sourceData.map(data => {
+        if(data.ydataAccountId == v.key){
+          this.setState({
+            curDoctor:{ ydataAccountCompellation: v.ydataAccountCompellation,ydataAccountId:v.ydataAccountId},
+          })
+        }
+      })    
+    }
+
+    selectChange=(value)=>{
+      if(!value.key){  
+        this.setState({
+          curDoctor:{}
+        })
+      }
+      else{
+        const {sourceData} = this.state;
+        if(sourceData){
+          sourceData.map((s, index) =>{
+            if(s.ydataAccountId == value.key){
+               this.setState({
+                curDoctor:{ ydataAccountCompellation: s.ydataAccountCompellation,ydataAccountId:s.ydataAccountId},
+              })
+              return;
+            }
+          } )
+        }
+      }
+    }
+  
+    parserDataDoctor = dt => {
+      if ((dt.data || dt.datas) ) {
+          const sourceData = dt.data ? dt.data : dt.datas
+          // console.log(sourceData)
+          const data = sourceData.map(r => ({
+              text: r.ydataAccountCompellation+"["+r.ydataAccountUserMobile+"]",
+              value: r.ydataAccountId,
+          }));
+          this.setState({
+            doctorList:data,
+            sourceData
+          });
+      } else {
+          this.setState({
+            doctorList: [],
+          });
+      }
+    };
+
+    componentDidMount(){
+      const {getFieldValue , setFieldsValue} = this.props.form;
+      const doctorNames = getFieldValue('doctorNames') || []
+      this.setState({doctorNames})
+    }
     render(){
-        const { getFieldDecorator, getFieldsValue, setFieldsValue} = this.props.form;
-        const { previewVisible, previewImage, submitting, fileList} = this.state;
+        const { getFieldDecorator, getFieldsValue, setFieldsValue,getFieldValue} = this.props.form;
+        const { previewVisible, previewImage, submitting, fileList, doctorList,doctorNames} = this.state;
+        const scientificResearchLibraryName = getFieldValue('scientificResearchLibraryName')
         const uploadButton = (
           <div>
             <Icon type="plus" />
@@ -38,7 +126,7 @@ class FormBox extends React.Component {
           wrapperCol: {
             xs: { span: 24 },
             sm: { span: 12 },
-            md: { span: 10 },
+            md: { span: 16 },
           },
         };
     
@@ -50,42 +138,54 @@ class FormBox extends React.Component {
         };        
         return(
             <div>
-            <Form onSubmit={this.props.handleSubmit} style={{ marginTop: 8 }}
+            <Form onSubmit={ (e)=>{this.props.handleSubmit(e,this.state.doctorNames)} } style={{ marginTop: 8 }}
             >
               <FormItem
                 {...formItemLayout}
                 label="科研库名称"
               >
-                {}
+                {scientificResearchLibraryName}
               </FormItem>
               
               <FormItem
                 {...formItemLayout}
                 label="可访问医生"
+
               >
-                {getFieldDecorator('publishDay', {
+                {getFieldDecorator('doctorNames', {
                   rules: [{
-                    required: true, message: '请选择',
+                    required: true,
+                    validator:this.doctorValidator,
                   }],
                 })(
                 <div>
-                  <SearchSelect sourceData={[]} style={{width:130}} /><Button type="primary" style={{ position:'relative',top:-1,left:-1 }} onClick={()=>{}}>添加</Button>
+                  <SearchSelect 
+                  url={API_URL.auth.queryDoctorByKeyword}
+                  sourceData={doctorList}
+                  searchKey = 'keywords'
+                  parserData={this.parserDataDoctor}
+                  handleSelect={this.handleSelect}
+                  onChange={this.selectChange}
+                  placeholder={ "请输入姓名或手机号" }
+                  style={{width:160}} 
+                  /><Button type="primary" style={{ position:'relative',top:-1,left:-1 }} onClick={()=>{this.add()}}>添加</Button>
                 </div>
                 )}
               </FormItem>
               <FormItem {...submitFormLayout}>
-                {'dfsdfwef'}
+                {doctorNames && doctorNames.map((v,i)=> <div key={i}> {v.ydataAccountCompellation}
+                  <Popconfirm title="确定要删除吗？" onConfirm={()=>{this.del(i)}} okText="是" cancelText="否">
+                <a href='javascript:;' style={{marginLeft:10}}><Icon type="close-circle" style={{color:'red'}}/></a>
+                </Popconfirm>
+                </div>)   }
               </FormItem>              
               <FormItem {...submitFormLayout} style={{ marginTop: 32 }}>
                 <Button type="primary" htmlType="submit" loading={submitting}>
-                {this.props.isEdit ? '保存':'新建'}
+                {this.props.isEdit ? '保存':'添加'}
                 </Button>
                 <Button style={{ marginLeft: 8 }} onClick={this.props.closeModalView.bind(this,'modalVisible','close')}>取消</Button>
               </FormItem>
             </Form>
-            <Modal visible={previewVisible} footer={null} onCancel={()=>{this.setState({previewVisible:false})}}>
-                <img alt="example" style={{ width: '100%' }} src={previewImage} />
-            </Modal>
            </div>
           
         )
@@ -102,7 +202,7 @@ class SearchForm extends Component {
                     <Input placeholder="请输入标题" />
                 )}
                 </FormItem>
-                <Button icon="search" type="primary" htmlType="submit" style={{float:'right'}}>查询</Button>
+                <Button icon="search" type="primary" htmlType="submit" >搜索</Button>
             </Form>
         );
     }
@@ -134,7 +234,7 @@ state = {
     });
     const options ={
         method: 'POST',
-        url: API_URL.index.queryLastTendencyList,
+        url: API_URL.auth.queryScientificResearchLibrary,
         data: {
             offset:pagination.current || 1,
             limit: pagination.pageSize,
@@ -280,23 +380,23 @@ state = {
                     <Button type="danger" style={{marginRight:10}}> 批量删除</Button>
                 </Popconfirm>
             }            
-                {/* <Button icon="plus" type="primary" onClick={()=>{this.changeModalView('modalVisible','open','new')}}>新建</Button> */}
-                <Link to='/index/news/save'><Button icon="plus" type="primary">新建</Button></Link>
+                {/* <Button icon="plus" type="primary" onClick={()=>{this.changeModalView('modalVisible','open','new')}}>添加</Button> */}
+                <Link to='/index/news/save'><Button icon="plus" type="primary">添加</Button></Link>
             </Col>
         </Row>
     );
   }
 
 
-  handleSubmit = (e) => {
+  handleSubmit = (e,v) => {
     e.preventDefault();
     this.formboxref.validateFieldsAndScroll((err, values) => {      
       if (!err) {
-        console.log(values)
-        values.publishDay = moment(values.publishDay).format(dayFormat)
-        values.mainImgName = values.mainImgName.file ? values.mainImgName.file.response.data[0].fileName : values.mainImgName
-         
-        this.save(values)
+        const list = {}        
+        v.map((d,i)=>{
+           list[`ids[${i}]`] = d.ydataAccountId
+        })
+        this.save(list)
       }
     });
   }
@@ -305,10 +405,10 @@ state = {
     const {isEdit,editId}=this.state
     const options ={
         method: 'POST',
-        url: isEdit ? API_URL.index.modifyLastTendency :  API_URL.index.addLastTendency,
+        url:  API_URL.auth.modifyScientificResearchLibraryAuth ,
         data: {
             ...params,
-            lastTendencyId:isEdit ? editId : null,
+            scientificResearchLibraryId:editId,
         },
         dataType: 'json',
         doneResult: data => {
@@ -317,7 +417,7 @@ state = {
                     message: data.success,
                     description: '',
                   })
-                this.changeModalView('modalVisible','close')
+                this.changeModalView('setAuthModalVisible','close')
                 this.loadListData()
             } else {
                 Modal.error({ title: data.error});
@@ -330,7 +430,7 @@ state = {
   edit=(id)=>{
     const options ={
         method: 'POST',
-        url: API_URL.index.queryLastTendencyList,
+        url: API_URL.auth.queryScientificResearchLibrary,
         data: {
             offset: 1,
             limit: 1,
@@ -378,9 +478,14 @@ state = {
     $.sendRequest(options)
   }
 
-  setAuth=(id)=>{
+  setAuth=(record)=>{
     this.changeModalView('setAuthModalVisible','open')
-
+    this.setState({
+      isEdit:true,
+      editId:record.id,
+      scientificResearchLibraryName:record.scientificResearchLibraryName,
+      doctorNames:record.scientificResearchLibraryAuths
+    })
   }
 
   changeModalView = (modalName,isShow,type,callback) => {    
@@ -397,7 +502,7 @@ state = {
         isEdit:true,
       })
     }    
-    callback && callback()
+    // callback && callback()
     }
 
 
@@ -411,25 +516,25 @@ state = {
       },
       {
         title: '科研库名称',
-        dataIndex: 'lastTendencyTitle',
-        width:250
+        dataIndex: 'scientificResearchLibraryName',
+        width:100
       },
       {
         title: '搜索条件',
-        dataIndex: 'createTimeString',
+        dataIndex: 'scientificResearchLibraryCriteria',
         width:100
       },
       {
         title: '可访问医生',
-        dataIndex: 'doctor',
-        width:100
+        dataIndex: 'doctorNames',
+        width:200
       }, 
       {
         title: '操作',
         width:100,
         render: (text,record,index) => (
           <div>           
-            <a href='javascript:;' onClick={this.setAuth.bind(this,record.id)}>设置权限</a>
+            <a href='javascript:;' onClick={this.setAuth.bind(this,record)}>设置权限</a>
           </div>
         ),
       },
@@ -439,7 +544,7 @@ state = {
     listData.map((d,i)=>{
         let list = {
             index: ((pagination.current - 1) || 0) * pagination.pageSize + i + 1,
-            id:d.lastTendencyId,
+            id:d.scientificResearchLibraryId,
             ...d,
         }
         lists.push(list)
@@ -451,18 +556,16 @@ state = {
     };
 
     const paginationProps = {
-      // showSizeChanger: true,
-      // showQuickJumper: true,
+      showSizeChanger: true,
+      showQuickJumper: true,
+      pageSizeOptions:config.pageSizeOptions,
       ...pagination,      
     };
-    const mapPropsToFields = () => (        
+    const mapPropsToFields = () => (      
       isEdit ?        
         { 
-            lastTendencyTitle:{value:detail.lastTendencyTitle},
-            mainImgName:{value:detail.mainImgName},
-            mainImgUrl:{value:detail.mainImgUrl},
-            publishDay:{value:moment(detail.publishDay)},
-             htmlText:{value:detail.htmlText},
+            scientificResearchLibraryName:{value:this.state.scientificResearchLibraryName},
+            doctorNames:{value:this.state.doctorNames},
         } : null
       ) 
     FormBox=Form.create({mapPropsToFields})(FormBox)

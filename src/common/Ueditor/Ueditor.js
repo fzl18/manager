@@ -25,7 +25,7 @@ class Ueditor extends Component{
   const {initialFrameHeight,initialFrameWidth} = config;
   const {value}=this.state
   const {id} = this.props;
-  const ueEditor = this.props.id && UE.getEditor(this.props.id, {initialFrameHeight: initialFrameHeight || '300', initialFrameWidth: initialFrameWidth || '600'})
+  const ueEditor = this.props.id && UE.getEditor(this.props.id, {initialFrameHeight: initialFrameHeight || '300', initialFrameWidth: initialFrameWidth || '600',autoFloatEnabled:false})
   const self = this; 
   ueEditor.ready((ueditor) => {
     if (!ueditor) {

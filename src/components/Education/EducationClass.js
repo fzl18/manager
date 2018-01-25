@@ -110,7 +110,7 @@ class FormBox extends React.Component {
               </FormItem>              
               <FormItem {...submitFormLayout} style={{ marginTop: 32 }}>
                 <Button type="primary" htmlType="submit" loading={submitting}>
-                {this.props.isEdit ? '保存':'新建'}
+                {this.props.isEdit ? '保存':'添加'}
                 </Button>
                 <Button style={{ marginLeft: 8 }} onClick={this.props.closeModalView.bind(this,'modalVisible','close')}>取消</Button>
               </FormItem>
@@ -134,7 +134,7 @@ class SearchForm extends Component {
                     <Input placeholder="请输入分类名称" />
                 )}
                 </FormItem>
-                <Button icon="search" type="primary" htmlType="submit" style={{float:'right'}}>查询</Button>
+                <Button icon="search" type="primary" htmlType="submit">搜索</Button>
             </Form>
         );
     }
@@ -312,7 +312,7 @@ state = {
                     <Button type="danger" style={{marginRight:10}}> 批量删除</Button>
                 </Popconfirm>
             }            
-                <Button icon="plus" type="primary" onClick={()=>{this.changeModalView('modalVisible','open','new')}}>新建</Button>
+                <Button icon="plus" type="primary" onClick={()=>{this.changeModalView('modalVisible','open','new')}}>添加</Button>
                 <Button style={{marginLeft:10}} icon="bar-chart" type="primary" onClick={this.sort}>排序</Button>
             </Col>
         </Row>
@@ -348,7 +348,7 @@ state = {
   }
 
   save = (params) => {
-    const {isEdit,editId}=this.state
+    const {isEdit,editId,searchFormValues}=this.state
     const options ={
         method: 'POST',
         url: isEdit ? API_URL.education.modifyPopularScienceCategory :  API_URL.education.addPopularScienceCategory,
@@ -364,7 +364,7 @@ state = {
                     description: '',
                   })
                 this.changeModalView('modalVisible','close')
-                this.loadListData()
+                this.loadListData(searchFormValues)
             } else {
                 Modal.error({ title: data.error});
             }            
@@ -486,8 +486,9 @@ state = {
     };
 
     const paginationProps = {
-      // showSizeChanger: true,
-      // showQuickJumper: true,
+      showSizeChanger: true,
+      showQuickJumper: true,
+      pageSizeOptions:config.pageSizeOptions,
       ...pagination,
     };
 
@@ -515,7 +516,7 @@ state = {
               scroll={{y:lists.length > config.listLength ? config.scroll.y : null}}
             />
             <Modal
-                title={isEdit ? '修改分类':'新建分类'}
+                title={isEdit ? '修改分类':'添加分类'}
                 visible={modalVisible}
                 width={500}
                 onOk={this.handleAdd}

@@ -63,23 +63,29 @@ class FormBox extends React.Component {
 
   handleSelectChange=(name,v)=>{
     const {hospitalId}=this.state
+    const {setFieldsValue}=this.props.form
     if(name==='hospitalId'){
       this.loadDepartment({'hospitalId':v})
       if(hospitalId !== v){
         this.setState({
           departmentId : ''
         })
+        setFieldsValue({hospitalDepartmentId:''})
       }      
     } 
     this.setState({
       [name]:v,
     })
   }
+  
+  componentWillMount(){
+    this.loadHospital()
+  }
 
   componentDidMount(){
     const {getFieldDecorator,getFieldValue}=this.props.form
     const departmentId = getFieldValue('hospitalDepartmentId')
-    this.loadHospital()
+    
     if(departmentId && departmentId !='undefined' && departmentId !='null' ){
       this.loadDepartment({'hospitalId':departmentId})
     }
@@ -89,8 +95,8 @@ class FormBox extends React.Component {
       const {getFieldDecorator,getFieldValue}=this.props.form
       const {assistants} = this.props
       const {hospital,department,departmentId}=this.state
-      const hospitalName = getFieldValue('hospitalName') || ''
-      const departmentLocalName = getFieldValue('departmentLocalName') || ''
+      // const hospitalName = getFieldValue('hospitalName') || ''
+      // const departmentLocalName = getFieldValue('departmentLocalName') || ''
       const formItemLayout = {
         labelCol: {
           xs: { span: 24 },
@@ -108,7 +114,9 @@ class FormBox extends React.Component {
           xs: { span: 24, offset: 0 },
           sm: { span: 10, offset: 7 },
         },
-      };        
+      };
+      const hoptions = hospital.length >0 ? hospital.map((v,i)=><Option key={i} value={`${v.hospitalId}`}>{v.hospitalName}</Option> ):null
+      const doptions = department.length >0 ? department.map(v=><Option key={v.hospitalDepartmentId}  value={`${v.hospitalDepartmentId}`}>{v.departmentLocalName}</Option> ) : null
       return(
           <div>
           <Form onSubmit={this.props.handleSubmit} style={{ marginTop: 8 }}
@@ -132,8 +140,8 @@ class FormBox extends React.Component {
             >
               {getFieldDecorator('userMobile', {
                 rules: [{
-                  required: true, message: '请输入手机号',
-                  pattern:/^1[3|4|5|8][0-9]\d{8}$/,
+                  required: true, message: '请输入11位正确的手机号',
+                  pattern:/^1[0-9][0-9]\d{8}$/,
                 }],
               })(
                 <Input placeholder="请输入手机号" />
@@ -149,7 +157,7 @@ class FormBox extends React.Component {
                 }],
               })(
                 <Select placeholder="请选择" onChange={this.handleSelectChange.bind(this,'hospitalId')}>
-                  {hospital.length >0 ? hospital.map((v,i)=><Option key={i} value={`${v.hospitalId}`}>{v.hospitalName}</Option> ):null}
+                  {hoptions}
                 </Select>
               )}
             </FormItem>
@@ -163,15 +171,14 @@ class FormBox extends React.Component {
                 }],
               })(
                 <Select placeholder="请选择" onChange={this.handleSelectChange.bind(this,'departmentId')}>
-                  { department.length >0 ?
-                    department.map(v=><Option value={`${v.hospitalDepartmentId}`}>{v.departmentLocalName}</Option> ) : null}
+                  {doptions}
                 </Select>
               )}
             </FormItem>
 
             <FormItem {...submitFormLayout} style={{ marginTop: 32 }}>
               <Button type="primary" htmlType="submit">
-              {this.props.isEdit ? '保存':'新建'}
+              {this.props.isEdit ? '保存':'添加'}
               </Button>
               <Button style={{ marginLeft: 8 }} onClick={this.props.changeModalView.bind(this,'modalVisible','close')}>取消</Button>
             </FormItem>
@@ -206,8 +213,8 @@ class SearchForm extends Component {
                     </Select>
                 )}
                 </FormItem>
-                <Button icon="plus" type="primary" style={{float:'right'}} onClick={()=>{this.props.changeModalView('modalVisible','open','new')}}>新建</Button>
-                <Button icon="search" type="primary" htmlType="submit" style={{float:'right',marginRight:10}}>查询</Button>
+                <Button icon="plus" type="primary" style={{float:'right'}} onClick={()=>{this.props.changeModalView('modalVisible','open','new')}}>添加</Button>
+                <Button icon="search" type="primary" htmlType="submit" style={{marginRight:10}}>搜索</Button>
             </Form>
         );
     }
@@ -391,7 +398,7 @@ state = {
   }
 
   save = (params) => {
-    const {isEdit,editId,assistants}=this.state
+    const {isEdit,editId,assistants,searchFormValues}=this.state
     let url = ''
     if(assistants){
       url = isEdit ? API_URL.usermanager.modifyAssisantByHospitalDepartmentId :  API_URL.usermanager.addAssisantByHospitalDepartmentId
@@ -403,7 +410,7 @@ state = {
         url: url,
         data: {
             ...params,
-            ydataUuId:isEdit ? editId : null,
+            ydataAccountId:isEdit ? editId : null,
         },
         dataType: 'json',
         doneResult: data => {
@@ -413,7 +420,7 @@ state = {
                     description: '',
                   })
                 this.changeModalView('modalVisible','close')
-                this.loadListData()
+                this.loadListData(searchFormValues)
             } else {
                 Modal.error({ title: data.error});
             }            
@@ -430,7 +437,7 @@ state = {
         data: {
             offset: 1,
             limit: 1,
-            userId:id,
+            ydataAccountId:id,
         },
         dataType: 'json',
         doneResult: data => {
@@ -455,7 +462,7 @@ state = {
         method: 'POST',
         url: assistants ? API_URL.usermanager.removeAssisantByHospitalDepartmentId : API_URL.usermanager.removeDoctorByHospitalDepartmentId,
         data: {
-            userId:id,
+          ydataAccountId:id,
         },
         dataType: 'json',
         doneResult: data => {
@@ -479,7 +486,7 @@ state = {
       method: 'POST',
       url: API_URL.usermanager.resetUserPassword,
       data: {
-          userId:id,
+          ydataAccountId:id,
       },
       dataType: 'json',
       doneResult: data => {
@@ -606,13 +613,13 @@ state = {
         title: '操作',
         width:100,
         render: (text,record,index) => (
-          <div style={{textAlign:'center'}}>
+          <div>
             <Popconfirm title="确定要重置密码吗？" onConfirm={()=>{this.resetUserPassword(record.id)}} okText="是" cancelText="否">
             <a href="javascript:;">重置密码</a>
             </Popconfirm>
             <span className="ant-divider" />
             <a href="javascript:;" onClick={()=>{this.changeModalView('modalVisible','open','edit',()=>{ this.edit(record.id) })}}>修改</a>
-            <span className="ant-divider" />
+            <br />
             <Popconfirm title="确定要删除吗？" onConfirm={()=>{this.del(record.id)}} okText="是" cancelText="否">
             <a href="javascript:;" >删除</a>
             </Popconfirm>
@@ -638,8 +645,9 @@ state = {
     };
 
     const paginationProps = {
-      // showSizeChanger: true,
-      // showQuickJumper: true,
+      showSizeChanger: true,
+      showQuickJumper: true,
+      pageSizeOptions:config.pageSizeOptions,
       ...pagination,
     };
     const mapPropsToFields = () => (        
@@ -656,9 +664,9 @@ state = {
     FormBox=Form.create({mapPropsToFields})(FormBox)
     let title
     if(assistants){
-      title = isEdit ? '修改医学助理':'新建医学助理'
+      title = isEdit ? '修改医学助理':'添加医学助理'
     }else{
-      title = isEdit ? '修改医生':'新建医生'
+      title = isEdit ? '修改医生':'添加医生'
     }
     return (
       <div>
